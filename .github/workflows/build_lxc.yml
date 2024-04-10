@@ -40,18 +40,24 @@ jobs:
               wget "https://github.com/lxc/lxc/archive/refs/tags/lxc-'${LXC_VERSION}'.tar.gz" -O lxc.tar.gz; \
               tar xf lxc.tar.gz --strip-components=1 -C lxc; \
               cd lxc; \
-              sed -i 's/cpuset\.cpus/cpus/g' src/lxc/cgroups/cgfsng.c; \
-              sed -i 's/cpuset\.mems/mems/g' src/lxc/cgroups/cgfsng.c; \
-              sed -i 's/cpuset\.cpus/cpus/g' src/lxc/pam/pam_cgfs.c; \
-              sed -i 's/cpuset\.mems/mems/g' src/lxc/pam/pam_cgfs.c; \
+              sed -i "s/cpuset\.cpus/cpus/g" src/lxc/cgroups/cgfsng.c; \
+              sed -i "s/cpuset\.mems/mems/g" src/lxc/cgroups/cgfsng.c; \
+              sed -i "s/cpuset\.cpus/cpus/g" src/lxc/pam/pam_cgfs.c; \
+              sed -i "s/cpuset\.mems/mems/g" src/lxc/pam/pam_cgfs.c; \
               meson setup -Dprefix=/usr build || exit 1; \
               meson compile -C build || exit 1; \
               DESTDIR=dist meson install -C build; \
-              tar -I "gzip --best" -cf "lxc-'${LXC_VERSION}'.tar.gz" -C dist ./usr; \
+              cd build; \
+              DIST_DIRS="$(cd dist; find . -maxdepth 1 -type d ! -name "\.")"; \
+              tar -I "gzip --best" -cf "lxc-'${LXC_VERSION}'.tar.gz" -C dist ${DIST_DIRS}; \
               mv "lxc-'${LXC_VERSION}'.tar.gz" /tmp; \
           '
 
           docker cp lxc-builder-${{ matrix.platform }}:/tmp/lxc-${LXC_VERSION}.tar.gz .
+
+          RELEASE_BODY="$(echo -ne "**LXC v${{ matrix.LXC_VERSION }} -** LXC fixed to support nested virtualization, ie:- running LXC inside LXC. This is needed if you want to run Waydroid in the phone.\n\nhttps://github.com/termux/termux-root-packages/issues/60#issuecomment-640381430\n\nhttps://github.com/termux/termux-packages/blob/master/root-packages/lxc/src-lxc-cgroups-cgfsng.c.patch\n\nhttps://github.com/termux/termux-packages/blob/master/root-packages/lxc/src-lxc-pam-pam_cgfs.c.patch")"
+          
+          echo RELEASE_BODY="$RELEASE_BODY" >> $GITHUB_ENV
           
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
@@ -61,5 +67,5 @@ jobs:
            asset_name: lxc-${{ matrix.platform }}.tar.gz
            tag: "extras"
            release_name: "Extras"
-           body: "**LXC v${{ matrix.LXC_VERSION }} -** LXC fixed to support nested virtualization, ie:- running LXC inside LXC. This is needed if you want to run Waydroid in the phone. https://github.com/termux/termux-root-packages/issues/60#issuecomment-640381430"
+           body: "${{ env.RELEASE_BODY }}"
            overwrite: true
