@@ -1,0 +1,61 @@
+name: Build LXC
+on:
+  workflow_dispatch:
+
+jobs:
+  build_python:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        platform: [arm, aarch64]
+        LXC_VERSION: ["5.0.3"]
+
+    steps:
+      - name: Set Build Architecture
+        run: |
+          if [ "${{ matrix.platform }}" = "aarch64" ]; then
+            echo "arch_name=arm64/v8" >> $GITHUB_ENV
+          elif [ "${{ matrix.platform }}" = "arm" ]; then
+            echo "arch_name=arm/v7" >> $GITHUB_ENV
+          fi
+          
+      - name: Build LXC
+        run: |
+          # Support for ARM and ARM64
+          if [[ "${{ matrix.platform }}" == "arm" || "${{ matrix.platform }}" == "aarch64" ]]; then
+              docker run --rm --privileged aptman/qus -s -- -p arm aarch64
+          fi
+          
+          docker run --name lxc-builder-${{ matrix.platform }} --platform linux/${{ env.arch_name }} ubuntu:jammy bash -c ' \
+              DEBIAN_FRONTEND=noninteractive sudo apt update; \
+              DEBIAN_FRONTEND=noninteractive sudo apt install -y libapparmor-dev libselinux-dev libseccomp-dev libcap-dev libsystemd-dev wget docbook2x meson pkg-config docbook2x cmake git libssl-dev libpam0g-dev liburing-dev; \
+              mkdir -p project/build/lxc; \
+              cd project/build; \
+              wget "https://github.com/lxc/lxc/archive/refs/tags/lxc-'${{ env.LXC_VERSION }}'.tar.gz" -O lxc.tar.gz; \
+              tar xf lxc.tar.gz --strip-components=1 -C lxc; \
+              cd lxc; \
+              sed -i 's/cpuset\.cpus/cpus/g' src/lxc/cgroups/cgfsng.c; \
+              sed -i 's/cpuset\.mems/mems/g' src/lxc/cgroups/cgfsng.c; \
+              sed -i 's/cpuset\.cpus/cpus/g' src/lxc/pam/pam_cgfs.c; \
+              sed -i 's/cpuset\.mems/mems/g' src/lxc/pam/pam_cgfs.c; \
+              meson setup -Dprefix=/usr build; \
+              meson compile -C build; \
+              DESTDIR=dist meson install -C build; \
+              tar -I "gzip --best" -cf "lxc-'${{ env.LXC_VERSION }}'.tar.gz" -C dist ./usr; \
+              mv "lxc-'${{ env.LXC_VERSION }}'.tar.gz" /tmp; \
+          '
+
+          docker cp lxc-builder-${{ matrix.platform }}:/tmp/lxc-${LXC_VERSION}.tar.gz .
+          
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: lxc-${LXC_VERSION}.tar.gz
+           asset_name: lxc-${{ matrix.platform }}.tar.gz
+           tag: "extras"
+           release_name: "Extras"
+           body: "**LXC v${{ env.LXC_VERSION }} -** LXC fixed to support nested virtualization, ie:- running LXC inside LXC. This is needed if you want to run Waydroid in the phone. https://github.com/termux/termux-root-packages/issues/60#issuecomment-640381430"
+           overwrite: true
