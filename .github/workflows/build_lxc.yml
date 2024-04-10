@@ -44,8 +44,8 @@ jobs:
               sed -i 's/cpuset\.mems/mems/g' src/lxc/cgroups/cgfsng.c; \
               sed -i 's/cpuset\.cpus/cpus/g' src/lxc/pam/pam_cgfs.c; \
               sed -i 's/cpuset\.mems/mems/g' src/lxc/pam/pam_cgfs.c; \
-              meson setup -Dprefix=/usr build; \
-              meson compile -C build; \
+              meson setup -Dprefix=/usr build || exit 1; \
+              meson compile -C build || exit 1; \
               DESTDIR=dist meson install -C build; \
               tar -I "gzip --best" -cf "lxc-'${LXC_VERSION}'.tar.gz" -C dist ./usr; \
               mv "lxc-'${LXC_VERSION}'.tar.gz" /tmp; \
