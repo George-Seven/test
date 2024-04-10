@@ -37,7 +37,7 @@ jobs:
               DEBIAN_FRONTEND=noninteractive apt install -y wget libapparmor-dev libselinux-dev libseccomp-dev libcap-dev libsystemd-dev wget docbook2x meson pkg-config docbook2x cmake git libssl-dev libpam0g-dev liburing-dev; \
               mkdir -p project/build/lxc; \
               cd project/build; \
-              wget "https://github.com/lxc/lxc/archive/refs/tags/lxc-'${LXC_VERSION }'.tar.gz" -O lxc.tar.gz; \
+              wget "https://github.com/lxc/lxc/archive/refs/tags/lxc-'${LXC_VERSION}'.tar.gz" -O lxc.tar.gz; \
               tar xf lxc.tar.gz --strip-components=1 -C lxc; \
               cd lxc; \
               sed -i 's/cpuset\.cpus/cpus/g' src/lxc/cgroups/cgfsng.c; \
