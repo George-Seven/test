@@ -34,7 +34,7 @@ jobs:
           
           docker run --name lxc-builder-${{ matrix.platform }} --platform linux/${{ env.arch_name }} ubuntu:jammy bash -c ' \
               DEBIAN_FRONTEND=noninteractive apt update; \
-              DEBIAN_FRONTEND=noninteractive apt install -y wget libapparmor-dev libselinux-dev libseccomp-dev cmake libcap-dev libsystemd-dev wget docbook2x meson pkg-config docbook2x cmake git libssl-dev libpam0g-dev liburing-dev; \
+              DEBIAN_FRONTEND=noninteractive apt install -y wget libapparmor-dev libselinux-dev libseccomp-dev libcap-dev libsystemd-dev wget docbook2x meson pkg-config docbook2x cmake git libssl-dev libpam0g-dev liburing-dev; \
               mkdir -p project/build/lxc; \
               cd project/build; \
               wget "https://github.com/lxc/lxc/archive/refs/tags/lxc-'${LXC_VERSION}'.tar.gz" -O lxc.tar.gz; \
