@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        platform: [arm, aarch64]
+        platform: [arm, aarch64, x86_64]
         LXC_VERSION: ["5.0.3"]
 
     steps:
@@ -19,6 +19,8 @@ jobs:
             echo "arch_name=arm64/v8" >> $GITHUB_ENV
           elif [ "${{ matrix.platform }}" = "arm" ]; then
             echo "arch_name=arm/v7" >> $GITHUB_ENV
+          elif [ "${{ matrix.platform }}" = "x86_64" ]; then
+            echo "arch_name=amd64" >> $GITHUB_ENV
           fi
           
       - name: Build LXC
