@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        platform: [arm, aarch64, x86_64]
+        platform: [arm, aarch64]
         LXC_VERSION: ["5.0.3"]
 
     steps:
@@ -64,7 +64,7 @@ jobs:
            tag: "extras"
            release_name: "Extras"
            body: |
-               **LXC v${{ matrix.LXC_VERSION }} -** LXC fixed to support nested virtualization.
+               **LXC v${{ matrix.LXC_VERSION }} -** LXC fixed to support nested virtualization inside container.
                
                This is needed if you want to run Waydroid in the phone.
                
