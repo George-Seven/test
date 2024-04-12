@@ -210,5 +210,8 @@ jobs:
            asset_name: "python-${{ matrix.PYTHON_VERSION }}-${{ matrix.platform }}.tar.gz"
            tag: "python-fixed"
            release_name: "Python Fixed"
-           body: "Python fixed to support multiprocessing module in Android environment - https://github.com/termux/termux-packages/pull/8990"
+           body: |
+               Python fixed to support multiprocessing module in Android environment.
+               
+               https://github.com/termux/termux-packages/pull/8990
            overwrite: true
