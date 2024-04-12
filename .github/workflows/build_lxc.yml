@@ -21,6 +21,9 @@ jobs:
             echo "arch_name=arm/v7" >> $GITHUB_ENV
           elif [ "${{ matrix.platform }}" = "x86_64" ]; then
             echo "arch_name=amd64" >> $GITHUB_ENV
+          else;
+            echo "Unsupported architecture"
+            exit 1
           fi
           
       - name: Build LXC
