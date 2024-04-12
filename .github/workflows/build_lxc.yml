@@ -32,7 +32,7 @@ jobs:
 
           export LXC_VERSION="${{ matrix.LXC_VERSION }}"
           
-          docker run --name lxc-builder-${{ matrix.platform }} --platform linux/${{ env.arch_name }} ubuntu:jammy bash -c ' \
+          docker run --name "lxc-builder-${{ matrix.platform }}" --platform "linux/${{ env.arch_name }}" ubuntu:jammy bash -c ' \
               DEBIAN_FRONTEND=noninteractive apt update; \
               DEBIAN_FRONTEND=noninteractive apt install -y libapparmor-dev libselinux-dev libseccomp-dev libcap-dev libsystemd-dev systemd wget docbook2x meson pkg-config docbook2x cmake git libssl-dev libpam0g-dev liburing-dev wget ruby; \
               gem install fpm; \
@@ -55,7 +55,7 @@ jobs:
               mv "lxc-'${LXC_VERSION}'.deb" /tmp; \
           '
 
-          docker cp lxc-builder-${{ matrix.platform }}:/tmp/lxc-${LXC_VERSION}.deb .
+          docker cp "lxc-builder-${{ matrix.platform }}":"/tmp/lxc-${LXC_VERSION}.deb" .
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
