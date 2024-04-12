@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        platform: [arm, aarch64]
+        platform: [arm, aarch64, x86_64]
         LXC_VERSION: ["5.0.3"]
 
     steps:
@@ -34,7 +34,9 @@ jobs:
           
           docker run --name lxc-builder-${{ matrix.platform }} --platform linux/${{ env.arch_name }} ubuntu:jammy bash -c ' \
               DEBIAN_FRONTEND=noninteractive apt update; \
-              DEBIAN_FRONTEND=noninteractive apt install -y wget libapparmor-dev libselinux-dev libseccomp-dev libcap-dev libsystemd-dev systemd wget docbook2x meson pkg-config docbook2x cmake git libssl-dev libpam0g-dev liburing-dev; \
+              DEBIAN_FRONTEND=noninteractive apt install -y libapparmor-dev libselinux-dev libseccomp-dev libcap-dev libsystemd-dev systemd wget docbook2x meson pkg-config docbook2x cmake git libssl-dev libpam0g-dev liburing-dev wget ruby; \
+              gem install fpm; \
+              cd ; \
               mkdir -p project/build/lxc; \
               cd project/build; \
               wget "https://github.com/lxc/lxc/archive/refs/tags/lxc-'${LXC_VERSION}'.tar.gz" -O lxc.tar.gz; \
@@ -48,19 +50,19 @@ jobs:
               meson compile -C build || exit 1; \
               DESTDIR=dist meson install -C build; \
               cd build; \
-              DIST_DIRS="$(cd dist; find . -maxdepth 1 -type d ! -name "\.")"; \
-              tar -I "gzip --best" -cf "lxc-'${LXC_VERSION}'.tar.gz" -C dist ${DIST_DIRS}; \
-              mv "lxc-'${LXC_VERSION}'.tar.gz" /tmp; \
+              find dist -type f -exec strip -s "{}" \; 2>/dev/null; \
+              package="lxc"; fpm --deb-pre-depends "${package}" -t deb -s dir -C dist --prefix / -f -n "${package}-extra" --provides "${package}-extra" -a native -m "George-Seven" --description "N/A" --url "N/A" -p "lxc-'${LXC_VERSION}'.deb"; \
+              mv "lxc-'${LXC_VERSION}'.deb" /tmp; \
           '
 
-          docker cp lxc-builder-${{ matrix.platform }}:/tmp/lxc-${LXC_VERSION}.tar.gz .
+          docker cp lxc-builder-${{ matrix.platform }}:/tmp/lxc-${LXC_VERSION}.deb .
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
-           file: lxc-${{ matrix.LXC_VERSION }}.tar.gz
-           asset_name: lxc-${{ matrix.platform }}.tar.gz
+           file: lxc-${{ matrix.LXC_VERSION }}.deb
+           asset_name: lxc-${{ matrix.platform }}.deb
            tag: "extras"
            release_name: "Extras"
            body: |
