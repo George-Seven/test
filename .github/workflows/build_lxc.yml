@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        platform: [arm, aarch64, x86_64]
+        platform: [arm, aarch64]
         LXC_VERSION: ["5.0.3"]
 
     steps:
