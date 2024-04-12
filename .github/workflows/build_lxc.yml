@@ -64,8 +64,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
-           file: lxc-${{ matrix.LXC_VERSION }}.deb
-           asset_name: lxc-${{ matrix.platform }}.deb
+           file: "lxc-${{ matrix.LXC_VERSION }}.deb"
+           asset_name: "lxc-${{ matrix.platform }}.deb"
            tag: "extras"
            release_name: "Extras"
            body: |
