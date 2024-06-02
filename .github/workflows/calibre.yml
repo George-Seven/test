@@ -24,7 +24,7 @@ jobs:
 
       - name: Build Calibre
         run: |
-          sudo PIP_ROOT_USER_ACTION=ignore pip install --break-system-packages -U udocker
+          sudo PIP_ROOT_USER_ACTION=ignore pip install -U udocker
           sudo apt install -y qemu-user upx wget
           udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
           # cd "$HOME/.udocker/containers/calibre/ROOT"
