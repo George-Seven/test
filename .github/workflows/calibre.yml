@@ -34,7 +34,7 @@ jobs:
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
            file: "calibre.tar.gz"
-           asset_name: "calibre--${{ matrix.PLATFORM }}.tar.gz"
+           asset_name: "calibre-${{ matrix.PLATFORM }}.tar.gz"
            tag: "calibre"
            release_name: "Calibre"
            overwrite: true
