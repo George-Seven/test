@@ -28,7 +28,7 @@ jobs:
           sudo apt install -y qemu-user upx
           udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
           chmod 755 -R "$HOME/.udocker/containers/calibre/ROOT/usr/lib" "$HOME/.udocker/containers/calibre/ROOT/usr/libexec" "$HOME/.udocker/containers/calibre/ROOT/usr/bin" "$HOME/.udocker/containers/calibre/ROOT/usr/sbin"
-          find "$HOME/.udocker/containers/calibre/ROOT/usr/lib" "$HOME/.udocker/containers/calibre/ROOT/usr/libexec" "$HOME/.udocker/containers/calibre/ROOT/usr/bin" "$HOME/.udocker/containers/calibre/ROOT/usr/sbin" -type f ! -name "ld-linux-*\.so*" ! -name "libc\.so*" -exec upx -1 --no-lzma "{}" \;
+          find "$HOME/.udocker/containers/calibre/ROOT/usr/lib" "$HOME/.udocker/containers/calibre/ROOT/usr/libexec" "$HOME/.udocker/containers/calibre/ROOT/usr/bin" "$HOME/.udocker/containers/calibre/ROOT/usr/sbin" -type f ! -name "ld-linux-*\.so*" ! -name "libc\.so*" -exec upx -qq -1 --no-lzma "{}" \;
           udocker export calibre | gzip --best > calibre.tar.gz
 
       - name: Upload Release
