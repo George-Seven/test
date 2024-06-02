@@ -25,11 +25,21 @@ jobs:
       - name: Build Calibre
         run: |
           pip install -U udocker
-          sudo apt install -y qemu-user upx
+          sudo apt install -y qemu-user upx proot wget
           udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
-          chmod 755 -R "$HOME/.udocker/containers/calibre/ROOT/usr/lib" "$HOME/.udocker/containers/calibre/ROOT/usr/libexec" "$HOME/.udocker/containers/calibre/ROOT/usr/bin" "$HOME/.udocker/containers/calibre/ROOT/usr/sbin"
-          find "$HOME/.udocker/containers/calibre/ROOT/usr/lib" "$HOME/.udocker/containers/calibre/ROOT/usr/libexec" "$HOME/.udocker/containers/calibre/ROOT/usr/bin" "$HOME/.udocker/containers/calibre/ROOT/usr/sbin" -type f ! -name "ld-linux-*\.so*" ! -name "libc\.so*" -exec upx -qq --best --ultra-brute "{}" \;
-          udocker export calibre | gzip --best > calibre.tar.gz
+          # cd "$HOME/.udocker/containers/calibre/ROOT"
+          # chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
+          # find "usr/lib" "usr/libexec" "usr/bin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" -exec upx -qq -1 "{}" \;
+          udocker export -o calibre.tar calibre
+          mkdir calibre
+          wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
+          chmod 755 proot
+          ./proot --link2symlink tar -xf calibre.tar -C calibre
+          cd calibre
+          chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
+          find "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" ! -name "libc\.musl*\.so*" -exec upx -qq -1 "{}" \;
+          cd ..
+          tar -I "gzip --best" -cf calibre.tar.gz ./calibre
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
