@@ -25,14 +25,14 @@ jobs:
       - name: Build Calibre
         run: |
           # Support for ARM64
-          if [[ "${{ matrix.platform }}" == "arm64" ]]; then
+          if [[ "${{ matrix.PLATFORM }}" == "aarch64" ]]; then
               docker run --rm --privileged aptman/qus -s -- -p aarch64
           fi
           
           mkdir -p build
           cd build
-          cat <<'EOF' > Dockerfile
-          FROM alpine
+          echo '
+          FROM --platform=linux/'${{ env.ARCH }}' alpine
 
           WORKDIR /root
 
@@ -40,7 +40,7 @@ jobs:
 
           CMD ["ash"]
           
-          EOF
+          ' > Dockerfile
           docker build --squash --no-cache --force-rm -t calibre .
           docker create --name=calibre calibre
           docker export calibre | gzip --best > ../calibre.tar.gz
