@@ -40,10 +40,15 @@ jobs:
                               "--exclude=dev/*", "--exclude=etc/udev/devices/*",
                               "--no-same-permissions", r"--exclude=.wh.*",
           '
-
           TMP_PATCH_FILE="$(mktemp)"
           sudo patch -p0 --no-backup-if-mismatch -r "${TMP_PATCH_FILE}" -d "$(python -c "import sysconfig; print(sysconfig.get_path('platlib'))" 2>/dev/null || echo "${PREFIX}/lib/python3.11/site-packages")" 2>/dev/null >/dev/null <<< "${UDOCKER_PATCH}" || true
           sudo rm -rf "${TMP_PATCH_FILE}"
+          mkdir -p "${HOME}/.udocker/lib"
+          cat <<'EOF' > "${HOME}/.udocker/udocker.conf"
+          [DEFAULT]
+          proot_link2symlink = True
+          EOF
+          echo "2.9.9" > "${HOME}/.udocker/lib/VERSION"
           sudo apt install -y qemu-user wget
           udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
           # cd "$HOME/.udocker/containers/calibre/ROOT"
@@ -54,12 +59,14 @@ jobs:
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
           chmod 755 proot
           _PROOT="$(pwd)/proot"
+          echo "use_proot_executable = $_PROOT" >> "${HOME}/.udocker/udocker.conf"
           wget -O- https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar -Jx --strip-components=1 -C _upx
           mv _upx/upx .
           rm -rf _upx
           _UPX="$(pwd)/upx"
           "$_UPX" --version
-          "$_PROOT" --link2symlink tar -xf calibre.tar -C calibre
+          #"$_PROOT" --link2symlink tar -xf calibre.tar -C calibre
+          tar -xf calibre.tar -C calibre
           cd calibre
           #chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           #find "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" ! -name "libc\.musl*\.so*" ! -name busybox ! -name "python*" -exec upx -qq -1 --android-shlib "{}" \;
