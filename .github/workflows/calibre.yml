@@ -42,14 +42,19 @@ jobs:
           
           ' > Dockerfile
           docker build --pull --no-cache --force-rm -t calibre .
-          docker create --name=calibre --dns=1.1.1.1 calibre
-          docker export calibre | gzip --best > ../calibre.tar.gz
+          docker create --name=calibre calibre
+          docker export -o calibre.tar calibre
+          tar -f calibre.tar --delete .dockerenv
+          tar -xf calibre.tar etc/resolv.conf
+          echo "nameserver 1.1.1.1" > etc/resolv.conf
+          tar -rf calibre.tar etc/resolv.conf
+          gzip --best calibre.tar
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
-           file: "calibre.tar.gz"
+           file: "build/calibre.tar.gz"
            asset_name: "calibre-${{ matrix.PLATFORM }}.tar.gz"
            tag: "calibre"
            release_name: "Calibre"
