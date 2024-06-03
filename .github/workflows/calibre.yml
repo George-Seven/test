@@ -63,7 +63,9 @@ jobs:
           rm -rf _upx
           _UPX="$(pwd)/upx"
           udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing || true'
-          udocker export -o calibre.tar calibre
+          #udocker export -o calibre.tar calibre
+          udocker export calibre | gzip --best > calibre.tar.gz
+          exit 0
           #"$_PROOT" --link2symlink tar -xf calibre.tar -C calibre
           tar -xf calibre.tar -C calibre
           #tar -I "gzip --best" -cf calibre.tar.gz ./calibre
