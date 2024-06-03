@@ -56,6 +56,7 @@ jobs:
                               "--exclude=dev/*", "--exclude=etc/udev/devices/*",
                               "--no-same-permissions", r"--exclude=.wh.*",
           '
+          echo "$UDOCKER_PATCH"
           TMP_PATCH_FILE="$(mktemp)"
           sudo patch -p0 --no-backup-if-mismatch -r "${TMP_PATCH_FILE}" -d "$(python -c "import sysconfig; print(sysconfig.get_path('platlib'))" 2>/dev/null || echo "${PREFIX}/lib/python3.11/site-packages")" 2>/dev/null >/dev/null <<< "${UDOCKER_PATCH}" || true
           sudo rm -rf "${TMP_PATCH_FILE}"
