@@ -25,24 +25,6 @@ jobs:
       - name: Build Calibre
         run: |
           sudo PIP_ROOT_USER_ACTION=ignore PIP_BREAK_SYSTEM_PACKAGES=1 pip install -U udocker
-          # Fix errors when extracting hardlinks from Docker images
-          # https://github.com/indigo-dc/udocker/issues/388#issuecomment-1527277800
-          UDOCKER_PATCH='
-          --- udocker/container/structure.py
-          +++ udocker.mod/container/structure.py
-          @@ -281,7 +281,7 @@
-                       if Msg.level >= Msg.VER:
-                           verbose = '\'v'\''
-                           Msg().out("Info: extracting:", tarf, l=Msg.INF)
-          -            cmd = ["tar", "-C", destdir, "-x" + verbose,
-          +            cmd = ["proot", "--link2symlink", "tar", "-C", destdir, "-x" + verbose,
-                              "--one-file-system", "--no-same-owner", "--overwrite",
-                              "--exclude=dev/*", "--exclude=etc/udev/devices/*",
-                              "--no-same-permissions", r"--exclude=.wh.*",
-          '
-          TMP_PATCH_FILE="$(mktemp)"
-          sudo patch -p0 --no-backup-if-mismatch -r "${TMP_PATCH_FILE}" -d "$(python -c "import sysconfig; print(sysconfig.get_path('platlib'))" 2>/dev/null || echo "${PREFIX}/lib/python3.11/site-packages")" 2>/dev/null >/dev/null <<< "${UDOCKER_PATCH}" || true
-          sudo rm -rf "${TMP_PATCH_FILE}"
           mkdir -p "${HOME}/.udocker/lib"
           cat <<'EOF' > "${HOME}/.udocker/udocker.conf"
           [DEFAULT]
@@ -59,6 +41,24 @@ jobs:
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
           chmod 755 proot
           _PROOT="$(pwd)/proot"
+          # Fix errors when extracting hardlinks from Docker images
+          # https://github.com/indigo-dc/udocker/issues/388#issuecomment-1527277800
+          UDOCKER_PATCH='
+          --- udocker/container/structure.py
+          +++ udocker.mod/container/structure.py
+          @@ -281,7 +281,7 @@
+                       if Msg.level >= Msg.VER:
+                           verbose = '\'v'\''
+                           Msg().out("Info: extracting:", tarf, l=Msg.INF)
+          -            cmd = ["tar", "-C", destdir, "-x" + verbose,
+          +            cmd = ["'$_PROOT'", "--link2symlink", "tar", "-C", destdir, "-x" + verbose,
+                              "--one-file-system", "--no-same-owner", "--overwrite",
+                              "--exclude=dev/*", "--exclude=etc/udev/devices/*",
+                              "--no-same-permissions", r"--exclude=.wh.*",
+          '
+          TMP_PATCH_FILE="$(mktemp)"
+          sudo patch -p0 --no-backup-if-mismatch -r "${TMP_PATCH_FILE}" -d "$(python -c "import sysconfig; print(sysconfig.get_path('platlib'))" 2>/dev/null || echo "${PREFIX}/lib/python3.11/site-packages")" 2>/dev/null >/dev/null <<< "${UDOCKER_PATCH}" || true
+          sudo rm -rf "${TMP_PATCH_FILE}"
           echo "use_proot_executable = $_PROOT" >> "${HOME}/.udocker/udocker.conf"
           wget -O- https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar -Jx --strip-components=1 -C _upx
           mv _upx/upx .
