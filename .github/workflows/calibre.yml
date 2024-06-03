@@ -34,11 +34,12 @@ jobs:
           mkdir -p
           calibre upx
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
+          chmod 755 proot
+          _PROOT="$(pwd)/proot"
           wget -O- https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar -Jx --strip-components=1 -C upx
           _UPX="$(pwd)/upx/upx"
           "$_UPX" --version
-          chmod 755 proot
-          ./proot --link2symlink tar -xf calibre.tar -C calibre
+          "$_PROOT" --link2symlink tar -xf calibre.tar -C calibre
           cd calibre
           #chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           #find "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" ! -name "libc\.musl*\.so*" ! -name busybox ! -name "python*" -exec upx -qq -1 --android-shlib "{}" \;
