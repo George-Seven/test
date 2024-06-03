@@ -33,7 +33,7 @@ jobs:
           udocker export -o calibre.tar calibre
           mkdir calibre upx
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
-          wget -O- https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar xf --strip-components=1 -C upx
+          wget -O- https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar x --strip-components=1 -C upx
           alias upx="$(pwd)/upx/upx"
           upx --version
           chmod 755 proot
