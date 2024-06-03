@@ -65,16 +65,17 @@ jobs:
           udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing || true'
           udocker export -o calibre.tar calibre
           #"$_PROOT" --link2symlink tar -xf calibre.tar -C calibre
-          tar -xf calibre.tar -C calibre
-          tar -I "gzip --best" -cf calibre.tar.gz ./calibre
-          exit 0
+          #tar -xf calibre.tar -C calibre
+          #tar -I "gzip --best" -cf calibre.tar.gz ./calibre
+          #exit 0
           cd calibre
           #chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           #find "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" ! -name "libc\.musl*\.so*" ! -name busybox ! -name "python*" -exec upx -qq -1 --android-shlib "{}" \;
           chmod 755 -R "usr/lib"
           #find "usr/lib" -type f ! -name "*musl*so*" ! -name "*\.py" ! -name "*\.pyc" -exec upx -qq -1 --android-shlib "{}" \;
           _TMP_DIR="$(mktemp -d)"
-          for i in $(find "usr/lib" -type f ! -name "*musl*so*" ! -name "*\.py" ! -name "*\.pyc"); do
+          #find "usr/lib" -type f ! -name "*musl*so*" ! -name "*\.py" ! -name "*\.pyc"
+          for i in $(find "usr/lib" -type f ! -name "*musl*\.so*" -name "*\.so*"); do
             _filename="$(basename "$i")"
             cp -L "$i" "$_TMP_DIR/$_filename".ori
             if "$_UPX" -qq -1 --android-shlib "$i"; then
