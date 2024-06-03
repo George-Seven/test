@@ -1,0 +1,56 @@
+name: Build Calibre
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        PLATFORM: [aarch64, x86_64]
+    steps:
+      - name: Set Build Architecture
+        run: |
+          if [ "${{ matrix.PLATFORM }}" = "aarch64" ]; then
+            echo "ARCH=arm64/v8" >> $GITHUB_ENV
+          elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
+            echo "ARCH=amd64" >> $GITHUB_ENV
+          else
+            echo "Unsupported architecture"
+            exit 1
+          fi
+
+      - name: Build Calibre
+        run: |
+          # Support for ARM64
+          if [[ "${{ matrix.platform }}" == "arm64" ]]; then
+              docker run --rm --privileged aptman/qus -s -- -p aarch64
+          fi
+          
+          mkdir -p build
+          cd build
+          cat <<'EOF' > Dockerfile
+          FROM alpine
+
+          WORKDIR /root
+
+          RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
+
+          CMD ["ash"]
+          
+          EOF
+          docker build --squash --no-cache --force-rm -t calibre .
+          docker create --name=calibre calibre
+          docker export calibre | gzip --best > ../calibre.tar.gz
+
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: "calibre.tar.gz"
+           asset_name: "calibre-${{ matrix.PLATFORM }}.tar.gz"
+           tag: "calibre"
+           release_name: "Calibre"
+           overwrite: true
