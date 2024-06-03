@@ -46,6 +46,7 @@ jobs:
           docker export -o calibre.tar calibre
           tar -f calibre.tar --delete .dockerenv
           tar -xf calibre.tar etc/resolv.conf
+          tar -f calibre.tar --delete etc/resolv.conf
           echo "nameserver 1.1.1.1" > etc/resolv.conf
           tar -rf calibre.tar etc/resolv.conf
           gzip --best calibre.tar
