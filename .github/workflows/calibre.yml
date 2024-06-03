@@ -32,11 +32,9 @@ jobs:
           EOF
           echo "2.9.9" > "${HOME}/.udocker/lib/VERSION"
           sudo apt install -y qemu-user wget
-          udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
           # cd "$HOME/.udocker/containers/calibre/ROOT"
           # chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           # find "usr/lib" "usr/libexec" "usr/bin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" -exec upx -qq -1 "{}" \;
-          udocker export -o calibre.tar calibre
           mkdir -p calibre _upx
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
           chmod 755 proot
@@ -66,6 +64,8 @@ jobs:
           rm -rf _upx
           _UPX="$(pwd)/upx"
           "$_UPX" --version
+          udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
+          udocker export -o calibre.tar calibre
           #"$_PROOT" --link2symlink tar -xf calibre.tar -C calibre
           tar -xf calibre.tar -C calibre
           cd calibre
