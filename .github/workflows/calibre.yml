@@ -31,11 +31,12 @@ jobs:
           # chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           # find "usr/lib" "usr/libexec" "usr/bin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" -exec upx -qq -1 "{}" \;
           udocker export -o calibre.tar calibre
-          mkdir calibre upx
+          mkdir -p
+          calibre upx
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
           wget -O- https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar -Jx --strip-components=1 -C upx
-          alias upx="$(pwd)/upx/upx"
-          upx --version
+          _UPX="$(pwd)/upx/upx"
+          "$_UPX" --version
           chmod 755 proot
           ./proot --link2symlink tar -xf calibre.tar -C calibre
           cd calibre
@@ -47,9 +48,9 @@ jobs:
           for i in $(find "usr/lib" -type f ! -name "*musl*so*" ! -name "*\.py" ! -name "*\.pyc"); do
             _filename="$(basename "$i")"
             cp -L "$i" "$_TMP_DIR/$_filename".ori
-            if upx -qq -1 --android-shlib "$i"; then
+            if "$_UPX" -qq -1 --android-shlib "$i"; then
               cp -L "$i" "$_TMP_DIR/$_filename".upx
-              if upx -qqq -d "$i"; then
+              if "$_UPX" -qqq -d "$i"; then
                 cp -L "$_TMP_DIR/$_filename".upx "$i"
               else
                 cp -L "$_TMP_DIR/$_filename".ori "$i"
