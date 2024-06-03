@@ -66,6 +66,8 @@ jobs:
           udocker export -o calibre.tar calibre
           #"$_PROOT" --link2symlink tar -xf calibre.tar -C calibre
           tar -xf calibre.tar -C calibre
+          tar -I "gzip --best" -cf calibre.tar.gz ./calibre
+          exit 0
           cd calibre
           #chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           #find "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" ! -name "libc\.musl*\.so*" ! -name busybox ! -name "python*" -exec upx -qq -1 --android-shlib "{}" \;
