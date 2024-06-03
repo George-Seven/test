@@ -41,7 +41,7 @@ jobs:
           CMD ["ash"]
           
           ' > Dockerfile
-          docker build --squash --no-cache --force-rm -t calibre .
+          docker build --pull --no-cache --force-rm -t calibre .
           docker create --name=calibre calibre
           docker export calibre | gzip --best > ../calibre.tar.gz
 
