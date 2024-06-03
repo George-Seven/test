@@ -39,7 +39,24 @@ jobs:
           #chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           #find "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" ! -name "libc\.musl*\.so*" ! -name busybox ! -name "python*" -exec upx -qq -1 --android-shlib "{}" \;
           chmod 755 -R "usr/lib"
-          find "usr/lib" -type f ! -name "*musl*so*" ! -name "*\.py" ! -name "*\.pyc" -exec upx -qq -1 --android-shlib "{}" \;
+          #find "usr/lib" -type f ! -name "*musl*so*" ! -name "*\.py" ! -name "*\.pyc" -exec upx -qq -1 --android-shlib "{}" \;
+          _TMP_DIR="$(mktemp -d)"
+          for i in $(find "usr/lib" -type f ! -name "*musl*so*" ! -name "*\.py" ! -name "*\.pyc"); do
+            _filename="$(basename "$i")"
+            cp -L "$i" "$_TMP_DIR/$_filename".ori
+            if upx -qq -1 --android-shlib "$i"; then
+              cp -L "$i" "$_TMP_DIR/$_filename".upx
+              if upx -qqq -d "$i"; then
+                cp -L "$_TMP_DIR/$_filename".upx "$i"
+              else
+                cp -L "$_TMP_DIR/$_filename".ori "$i"
+              fi
+              rm "$_TMP_DIR/$_filename".upx
+            else
+              cp -L "$_TMP_DIR/$_filename".ori "$i"
+            fi
+            rm "$_TMP_DIR/$_filename".ori
+          done
           cd ..
           sleep 1
           tar -I "gzip --best" -cf calibre.tar.gz ./calibre
