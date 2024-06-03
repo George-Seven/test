@@ -25,14 +25,17 @@ jobs:
       - name: Build Calibre
         run: |
           sudo PIP_ROOT_USER_ACTION=ignore PIP_BREAK_SYSTEM_PACKAGES=1 pip install -U udocker
-          sudo apt install -y qemu-user upx wget
+          sudo apt install -y qemu-user wget
           udocker run --name=calibre --nosysdirs -v /dev -v /proc -v /sys --platform "linux/${{ env.ARCH }}" alpine ash -c 'echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing'
           # cd "$HOME/.udocker/containers/calibre/ROOT"
           # chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           # find "usr/lib" "usr/libexec" "usr/bin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" -exec upx -qq -1 "{}" \;
           udocker export -o calibre.tar calibre
-          mkdir calibre
+          mkdir calibre upx
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
+          wget -O- https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz | tar xf --strip-components=1 -C upx
+          alias upx="$(pwd)/upx/upx"
+          upx --version
           chmod 755 proot
           ./proot --link2symlink tar -xf calibre.tar -C calibre
           cd calibre
