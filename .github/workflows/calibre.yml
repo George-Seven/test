@@ -31,8 +31,7 @@ jobs:
           # chmod 755 -R "lib" "usr/lib" "usr/libexec" "bin" "usr/bin" "sbin" "usr/sbin"
           # find "usr/lib" "usr/libexec" "usr/bin" "usr/sbin" -type f ! -name "ld-*\.so*" ! -name "libc\.so*" -exec upx -qq -1 "{}" \;
           udocker export -o calibre.tar calibre
-          mkdir -p
-          calibre upx
+          mkdir -p calibre upx
           wget -O proot https://github.com/proot-me/proot/releases/download/v5.3.0/proot-v5.3.0-x86_64-static
           chmod 755 proot
           _PROOT="$(pwd)/proot"
