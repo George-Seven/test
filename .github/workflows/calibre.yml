@@ -42,7 +42,7 @@ jobs:
           
           ' > Dockerfile
           docker build --pull --no-cache --force-rm -t calibre .
-          docker create --name=calibre calibre
+          docker create --name=calibre --dns=1.1.1.1 calibre
           docker export calibre | gzip --best > ../calibre.tar.gz
 
       - name: Upload Release
