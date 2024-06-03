@@ -36,7 +36,7 @@ jobs:
 
           WORKDIR /root
 
-          RUN echo "nameserver 1.1.1.1" > /etc/resolv.conf && echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing
+          RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk update && apk add --no-cache -u calibre@testing
 
           CMD ["ash"]
           
