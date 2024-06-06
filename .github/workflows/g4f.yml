@@ -45,11 +45,12 @@ jobs:
           CMD ["ash"]
           
           ' > Dockerfile
-          _IMAGE_NAME="g4f"
+          _IMAGE_NAME="g4f-image"
           echo "_IMAGE_NAME=$_IMAGE_NAME" >> $GITHUB_ENV
           docker build --pull --no-cache --force-rm -t "$_IMAGE_NAME" .
           docker create --name="$_IMAGE_NAME" "$_IMAGE_NAME"
           docker export -o "$_IMAGE_NAME".tar "$_IMAGE_NAME"
+          ls -rla
           tar -f "$_IMAGE_NAME".tar --delete .dockerenv
           tar -xf "$_IMAGE_NAME".tar etc/resolv.conf
           tar -f "$_IMAGE_NAME".tar --delete etc/resolv.conf
