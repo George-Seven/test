@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        PLATFORM: [aarch64, x86_64]
+        PLATFORM: [arm, aarch64, x86, x86_64]
     steps:
       - name: Set Build Architecture
         run: |
@@ -17,16 +17,21 @@ jobs:
             echo "ARCH=arm64/v8" >> $GITHUB_ENV
           elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
             echo "ARCH=amd64" >> $GITHUB_ENV
+          elif [ "${{ matrix.PLATFORM }}" = "arm" ]; then
+            echo "ARCH=amd64" >> $GITHUB_ENV
+          elif [ "${{ matrix.PLATFORM }}" = "x86" ]; then
+            echo "ARCH=amd64" >> $GITHUB_ENV
+          else
           else
             echo "Unsupported architecture"
             exit 1
           fi
 
-      - name: Build Calibre
+      - name: Build g4f
         run: |
           # Support for ARM64
-          if [[ "${{ matrix.PLATFORM }}" == "aarch64" ]]; then
-              docker run --rm --privileged aptman/qus -s -- -p aarch64
+          if [[ "${{ matrix.PLATFORM }}" == "aarch64" ]] || [[ "${{ matrix.PLATFORM }}" == "arm" ]]; then
+              docker run --rm --privileged aptman/qus -s -- -p arm aarch64
           fi
           
           mkdir -p build
@@ -36,27 +41,29 @@ jobs:
 
           WORKDIR /root
 
-          RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && apk add --no-cache -u calibre@testing poppler-utils
+          RUN apk add --no-cache -u py3-pip && pip install --root-user-action=ignore --break-system-packages -U g4f flask
 
           CMD ["ash"]
           
           ' > Dockerfile
-          docker build --pull --no-cache --force-rm -t calibre .
-          docker create --name=calibre calibre
-          docker export -o calibre.tar calibre
-          tar -f calibre.tar --delete .dockerenv
-          tar -xf calibre.tar etc/resolv.conf
-          tar -f calibre.tar --delete etc/resolv.conf
+          _IMAGE_NAME="g4f"
+          echo "_IMAGE_NAME=$_IMAGE_NAME" >> $GITHUB_ENV
+          docker build --pull --no-cache --force-rm -t "$_IMAGE_NAME" .
+          docker create --name="$_IMAGE_NAME" "$_IMAGE_NAME"
+          docker export -o "$_IMAGE_NAME".tar "$_IMAGE_NAME"
+          tar -f "$_IMAGE_NAME".tar --delete .dockerenv
+          tar -xf "$_IMAGE_NAME".tar etc/resolv.conf
+          tar -f "$_IMAGE_NAME".tar --delete etc/resolv.conf
           echo "nameserver 1.1.1.1" > etc/resolv.conf
-          tar -rf calibre.tar etc/resolv.conf
-          gzip --best calibre.tar
+          tar -rf "$_IMAGE_NAME".tar etc/resolv.conf
+          gzip --best "$_IMAGE_NAME".tar
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
-           file: "build/calibre.tar.gz"
-           asset_name: "calibre-${{ matrix.PLATFORM }}.tar.gz"
-           tag: "calibre"
-           release_name: "Calibre"
+           file: "build/${{ env._IMAGE_NAME }}.tar.gz"
+           asset_name: "${{ env._IMAGE_NAME }}-${{ matrix.PLATFORM }}.tar.gz"
+           tag: "g4f"
+           release_name: "g4f"
            overwrite: true
