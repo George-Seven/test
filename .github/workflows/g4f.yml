@@ -18,9 +18,9 @@ jobs:
           elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
             echo "ARCH=amd64" >> $GITHUB_ENV
           elif [ "${{ matrix.PLATFORM }}" = "arm" ]; then
-            echo "ARCH=amd64" >> $GITHUB_ENV
+            echo "ARCH=arm/v7" >> $GITHUB_ENV
           elif [ "${{ matrix.PLATFORM }}" = "x86" ]; then
-            echo "ARCH=amd64" >> $GITHUB_ENV
+            echo "ARCH=386" >> $GITHUB_ENV
           else
           else
             echo "Unsupported architecture"
@@ -30,7 +30,7 @@ jobs:
       - name: Build g4f
         run: |
           # Support for ARM64
-          if [[ "${{ matrix.PLATFORM }}" == "aarch64" ]] || [[ "${{ matrix.PLATFORM }}" == "arm" ]]; then
+          if [[ "${{ matrix.PLATFORM }}" == "aarch64" || "${{ matrix.PLATFORM }}" == "arm" ]]; then
               docker run --rm --privileged aptman/qus -s -- -p arm aarch64
           fi
           
