@@ -29,7 +29,7 @@ jobs:
 
       - name: Build g4f
         run: |
-          # Support for ARM64
+          # Support for ARM and AARCH64
           if [[ "${{ matrix.PLATFORM }}" == "aarch64" || "${{ matrix.PLATFORM }}" == "arm" ]]; then
               docker run --rm --privileged aptman/qus -s -- -p arm aarch64
           fi
