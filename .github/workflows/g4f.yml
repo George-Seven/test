@@ -45,7 +45,7 @@ jobs:
           CMD ["ash"]
           
           ' > Dockerfile
-          _IMAGE_NAME="g4f-image"
+          _IMAGE_NAME="g4f-$(uuid)"
           echo "_IMAGE_NAME=$_IMAGE_NAME" >> $GITHUB_ENV
           docker build --pull --no-cache --force-rm -t "$_IMAGE_NAME" .
           docker create --name="$_IMAGE_NAME" "$_IMAGE_NAME"
@@ -63,7 +63,7 @@ jobs:
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
            file: "build/${{ env._IMAGE_NAME }}.tar.gz"
-           asset_name: "${{ env._IMAGE_NAME }}-${{ matrix.PLATFORM }}.tar.gz"
+           asset_name: "g4f-${{ matrix.PLATFORM }}.tar.gz"
            tag: "g4f"
            release_name: "g4f"
            overwrite: true
