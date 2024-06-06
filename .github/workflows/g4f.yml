@@ -40,7 +40,7 @@ jobs:
 
           WORKDIR /root
 
-          RUN apk add --no-cache -u py3-pip gcc && pip install --root-user-action=ignore --break-system-packages -U g4f flask && apk del gcc &>/dev/null | true
+          RUN apk add --no-cache -u py3-pip gcc libc-dev && pip install --root-user-action=ignore --break-system-packages -U g4f flask && apk del gcc libc-dev &>/dev/null | true
 
           CMD ["ash"]
           
