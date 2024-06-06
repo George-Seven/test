@@ -45,12 +45,12 @@ jobs:
           CMD ["ash"]
           
           ' > Dockerfile
-          _IMAGE_NAME="g4f-$(uuidgen)"
+          _IMAGE_NAME="g4f"
+          _TMP_IMAGE_NAME="$_IMAGE_NAME-$(uuidgen)"
           echo "_IMAGE_NAME=$_IMAGE_NAME" >> $GITHUB_ENV
-          docker build --pull --no-cache --force-rm -t "$_IMAGE_NAME" .
-          docker create --name="$_IMAGE_NAME" "$_IMAGE_NAME"
-          docker export -o "$_IMAGE_NAME".tar "$_IMAGE_NAME"
-          ls -rla
+          docker build --pull --no-cache --force-rm -t "$_TMP_IMAGE_NAME" .
+          docker create --name="$_TMP_IMAGE_NAME" "$_TMP_IMAGE_NAME"
+          docker export -o "$_IMAGE_NAME".tar "$_TMP_IMAGE_NAME"
           tar -f "$_IMAGE_NAME".tar --delete .dockerenv
           tar -xf "$_IMAGE_NAME".tar etc/resolv.conf
           tar -f "$_IMAGE_NAME".tar --delete etc/resolv.conf
@@ -63,7 +63,7 @@ jobs:
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
            file: "build/${{ env._IMAGE_NAME }}.tar.gz"
-           asset_name: "g4f-${{ matrix.PLATFORM }}.tar.gz"
+           asset_name: "${{ env._IMAGE_NAME }}-${{ matrix.PLATFORM }}.tar.gz"
            tag: "g4f"
            release_name: "g4f"
            overwrite: true
