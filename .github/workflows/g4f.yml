@@ -22,7 +22,6 @@ jobs:
           elif [ "${{ matrix.PLATFORM }}" = "x86" ]; then
             echo "ARCH=386" >> $GITHUB_ENV
           else
-          else
             echo "Unsupported architecture"
             exit 1
           fi
