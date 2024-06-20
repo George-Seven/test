@@ -36,13 +36,13 @@ jobs:
           rm -rf termux-packages.tmp
           cd termux-packages
           scripts/run-docker.sh ./build-package.sh -o "$_PACKAGE_NAME" -a "${{ env.ARCH }}" -f -i "$_PACKAGE_NAME"
-          zip -r9 "$_PACKAGE_NAME".zip "$_PACKAGE_NAME"
+          zip -r9 ../"$_PACKAGE_NAME".zip "$_PACKAGE_NAME"
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
-           file: "termux-packages/${{ env._PACKAGE_NAME }}.zip"
+           file: "${{ env._PACKAGE_NAME }}.zip"
            asset_name: "${{ env._PACKAGE_NAME }}-${{ matrix.PLATFORM }}.zip"
            tag: "${{ env._PACKAGE_NAME }}"
            release_name: "${{ env._PACKAGE_NAME }}"
