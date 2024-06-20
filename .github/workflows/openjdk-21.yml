@@ -1,0 +1,53 @@
+name: Build openjdk-21
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        PLATFORM: [arm, aarch64, x86, x86_64]
+    steps:
+      - name: Set Build Architecture
+        run: |
+          if [ "${{ matrix.PLATFORM }}" = "aarch64" ]; then
+            echo "ARCH=aarch64" >> $GITHUB_ENV
+          elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
+            echo "ARCH=amd64" >> $GITHUB_ENV
+          elif [ "${{ matrix.PLATFORM }}" = "arm" ]; then
+            echo "ARCH=arm" >> $GITHUB_ENV
+          elif [ "${{ matrix.PLATFORM }}" = "x86" ]; then
+            echo "ARCH=i686" >> $GITHUB_ENV
+          else
+            echo "Unsupported architecture"
+            exit 1
+          fi
+
+      - name: Build openjdk-21
+        run: |
+          _PACKAGE_NAME="openjdk-21"
+          echo "_PACKAGE_NAME=$_PACKAGE_NAME" >> $GITHUB_ENV
+          git clone --depth 1 https://github.com/termux/termux-packages termux-packages
+          git clone --depth 1 https://github.com/itsaky/termux-packages termux-packages.tmp
+          mv "termux-packages.tmp/packages/$_PACKAGE_NAME" termux-packages/packages
+          rm -rf termux-packages.tmp
+          cd termux-packages
+          scripts/run-docker.sh ./build-package.sh -o "$_PACKAGE_NAME" -a "${{ env.ARCH }}" -f -i "$_PACKAGE_NAME"
+          zip -r9 "$_PACKAGE_NAME".zip "$_PACKAGE_NAME"
+
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: "${{ env._PACKAGE_NAME }}.zip"
+           asset_name: "${{ env._PACKAGE_NAME }}-${{ matrix.PLATFORM }}.zip"
+           tag: "${{ env._PACKAGE_NAME }}"
+           release_name: "${{ env._PACKAGE_NAME }}"
+           body: |
+             ${{ env._PACKAGE_NAME }} for Termux.
+             
+             https://github.com/termux/termux-packages/issues/17978
+           overwrite: true
