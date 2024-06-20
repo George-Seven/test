@@ -16,7 +16,7 @@ jobs:
           if [ "${{ matrix.PLATFORM }}" = "aarch64" ]; then
             echo "ARCH=aarch64" >> $GITHUB_ENV
           elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
-            echo "ARCH=amd64" >> $GITHUB_ENV
+            echo "ARCH=x86_64" >> $GITHUB_ENV
           elif [ "${{ matrix.PLATFORM }}" = "arm" ]; then
             echo "ARCH=arm" >> $GITHUB_ENV
           elif [ "${{ matrix.PLATFORM }}" = "x86" ]; then
