@@ -1,4 +1,4 @@
-name: Build Calibre
+name: Build Calibre Pld2
 on:
   workflow_dispatch:
 
