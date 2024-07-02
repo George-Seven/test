@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        PLATFORM: [x86_64]
+        PLATFORM: [aarch64, x86_64]
     steps:
       - name: Set Build Architecture
         run: |
