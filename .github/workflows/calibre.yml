@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        PLATFORM: [aarch64]
+        PLATFORM: [aarch64, x86_64]
     steps:
       - name: Set Build Architecture
         run: |
@@ -82,7 +82,6 @@ jobs:
           cd build
           sudo chown "$(id -u):$(id -u)" calibre.tar.gz
           sudo chgrp "$(id -u)" calibre.tar.gz
-          exit 0
           echo '
           FROM --platform=linux/'${{ env.ARCH }}' alpine
 
@@ -90,7 +89,7 @@ jobs:
           
           COPY calibre.tar.gz /tmp
           
-          RUN for i in $(tar -tf /tmp/calibre.tar.gz); do if ! [ -d "/$i" ]; then if [ -L "/$i" ]; then rm -rf "/$i"; fi; fi; done && tar zxf /tmp/calibre.tar.gz -C / --overwrite && rm /tmp/calibre.tar.gz
+          RUN for i in $(tar -tf /tmp/calibre.tar.gz); do if [ -L "/$i" ]; then rm -rf "/$i"; fi; done && tar zxf /tmp/calibre.tar.gz -C / --overwrite && rm /tmp/calibre.tar.gz
           
           CMD ["ash"]
           
