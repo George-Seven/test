@@ -1,0 +1,119 @@
+name: Build Calibre
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        PLATFORM: [aarch64, x86_64]
+    steps:
+      - name: Set Build Architecture
+        run: |
+          if [ "${{ matrix.PLATFORM }}" = "aarch64" ]; then
+            echo "ARCH=arm64" >> $GITHUB_ENV
+          elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
+            echo "ARCH=amd64" >> $GITHUB_ENV
+          else
+            echo "Unsupported architecture"
+            exit 1
+          fi
+
+      - name: Build Calibre
+        run: |
+          # Support for ARM64
+          if [[ "${{ matrix.PLATFORM }}" == "aarch64" ]]; then
+              docker run --rm --privileged aptman/qus -s -- -p aarch64
+          fi
+
+          mkdir bin
+          wget -O bin/rootfstool https://github.com/Moe-hacker/rootfstool/raw/main/rootfstool
+          if [ "${{ matrix.PLATFORM }}" = "aarch64" ]; then
+            wget -O bin/ruri https://github.com/Moe-hacker/ruri/releases/latest/download/ruri-arm64
+          elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
+            wget -O bin/ruri https://github.com/Moe-hacker/ruri/releases/latest/download/ruri-x84_64
+          else
+            echo "Unsupported architecture"
+            exit 1
+          fi
+          chmod 755 bin/*
+          _ROOTFSTOOL="$(pwd)/bin/rootfstool"
+          _RURI="$(pwd)/bin/ruri"
+          "$_ROOTFSTOOL" d -a "${{ env.ARCH }}" -d alpine
+          _ROOTFS="rootfs"
+          sudo mkdir "$_ROOTFS"
+          _CONTAINER="$(cd "$_ROOTFS"; pwd)"
+          sudo tar xf rootfs.tar.xz -C "$_CONTAINER"
+          sudo mount -B "$_CONTAINER" "$_CONTAINER"
+          sudo mount -o remount,suid,strictatime "$_CONTAINER"
+          sudo LD_PRELOAD= "$_RURI" -p -N "$_CONTAINER" /usr/bin/env -i USER=root SHLVL=1 HOME=/root PAGER=less LOGNAME=root TERM=screen-256color LC_COLLATE=C PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin LANG=C.UTF-8 SHELL=/bin/sh CHARSET=UTF-8 QTWEBENGINE_DISABLE_SANDBOX=1 sh -c ' \
+          	cd "$HOME"; \
+          	echo "nameserver 1.1.1.1" > /etc/resolv.conf; \
+          	echo "127.0.0.1 localhost" > /etc/hosts; \
+          	echo "::1 localhost" >> /etc/hosts; \
+          	echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
+          	apk add --no-cache -u calibre@testing poppler-utils findutils wget make gcc g++ linux-headers musl-dev ed diffutils patch; \
+          	rm -rf *.{pdf,epub}; \
+          	wget https://codeberg.org/schilytools/schilytools/archive/2024-03-21.tar.gz -O- | tar zx
+          	cd schilytools; \
+          	make; \
+          	_SFIND="$(find "$(pwd)/sfind" -type f -name sfind)"; \
+          	cd ..; \
+          	sleep 10; \
+          	_START_TIME="$(date "+%s")"; \
+          	ebook-convert Wonderzine.recipe test.pdf; \
+          	ebook-convert Wonderzine.recipe test.epub; \
+          	ebook-convert test.pdf test.pdf.epub; \
+          	ebook-convert test.epub test.epub.pdf; \
+          	_END_TIME="$(date "+%s")"; \
+          	reset || true; "$_SFIND" / ! -type d -atime "-$(($_END_TIME-$_START_TIME+5))s" 2>/dev/null | grep -Ev "(^/proc/|^/sys/|^/dev/|^/lib/ld-musl-.*\.so|^/etc/resolv.conf$|^/etc/hosts$|^$HOME|^/var/)" | tee deps.1.txt deps.2.txt deps.ori.txt; \
+          	sed -i -E "/\/s?bin\//d" deps.1.txt; \
+          	sed -i -E "/\/s?bin\/(python|calibre|ebook|pdf).*/!d" deps.2.txt; \
+          	cat deps.1.txt deps.2.txt > deps.txt; \
+          	GZIP=-9 tar zcf calibre.tar.gz -T deps.txt; \
+          '
+          
+          sudo LD_PRELOAD= "$_RURI" -U "$_CONTAINER"
+          mkdir build
+          sudo cp "$_CONTAINER/root/calibre.tar.gz" build
+          cd build
+          sudo chown "$(id -u):$(id -u)" calibre.tar.gz
+          sudo chgrp "$(id -u)" calibre.tar.gz
+          
+          echo '
+          FROM --platform=linux/'${{ env.ARCH }}' alpine
+
+          WORKDIR /root
+          
+          COPY calibre.tar.gz /tmp
+          
+          RUN for i in $(tar -tf /tmp/calibre.tar.gz); do if ! [ -d "/$i" ]; then if [ -L "/$i" ]; then rm -rf "/$i"; fi; fi; done && tar zxf /tmp/calibre.tar.gz -C / --overwrite && rm /tmp/calibre.tar.gz
+          
+          CMD ["ash"]
+          
+          ' > Dockerfile
+          
+          docker build --pull --no-cache --force-rm -t calibre .
+          rm calibre.tar.gz
+          docker create --name=calibre calibre
+          docker export -o calibre.tar calibre
+          tar -f calibre.tar --delete .dockerenv
+          mkdir etc
+          echo "nameserver 1.1.1.1" | sudo tee etc/resolv.conf >/dev/null
+          echo "127.0.0.1 localhost" | sudo tee etc/hosts >/dev/null
+          echo "::1 localhost" | sudo tee -a etc/hosts >/dev/null
+          tar -rf calibre.tar etc/resolv.conf etc/hosts
+          gzip --best calibre.tar
+
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: "build/calibre.tar.gz"
+           asset_name: "calibre-${{ matrix.PLATFORM }}.tar.gz"
+           tag: "calibre"
+           release_name: "Calibre"
+           overwrite: true
