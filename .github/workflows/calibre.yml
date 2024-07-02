@@ -62,14 +62,14 @@ jobs:
           	make; \
           	_SFIND="$(find "$(pwd)/sfind" -type f -name sfind)"; \
           	cd ..; \
-          	sleep 10; \
+          	sleep 1m; \
           	_START_TIME="$(date "+%s")"; \
           	ebook-convert Wonderzine.recipe test.pdf; \
           	ebook-convert Wonderzine.recipe test.epub; \
           	ebook-convert test.pdf test.pdf.epub; \
           	ebook-convert test.epub test.epub.pdf; \
           	_END_TIME="$(date "+%s")"; \
-          	reset || true; "$_SFIND" / ! -type d -atime "-$(($_END_TIME-$_START_TIME+5))s" 2>/dev/null | grep -Ev "(^/proc/|^/sys/|^/dev/|^/lib/ld-musl-.*\.so|^/etc/resolv.conf$|^/etc/hosts$|^$HOME|^/var/)" | tee deps.1.txt deps.2.txt deps.ori.txt; \
+          	reset || true; "$_SFIND" / ! -type d -atime "-$(($_END_TIME-$_START_TIME+30))s" 2>/dev/null | grep -Ev "(^/proc/|^/sys/|^/dev/|^/lib/ld-musl-.*\.so|^/etc/resolv.conf$|^/etc/hosts$|^$HOME|^/var/)" | tee deps.1.txt deps.2.txt deps.ori.txt; \
           	sed -i -E "/\/s?bin\//d" deps.1.txt; \
           	sed -i -E "/\/s?bin\/(python|calibre|ebook|pdf).*/!d" deps.2.txt; \
           	cat deps.1.txt deps.2.txt > deps.txt; \
