@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        PLATFORM: [aarch64, x86_64]
+        PLATFORM: [x86_64]
     steps:
       - name: Set Build Architecture
         run: |
@@ -34,7 +34,7 @@ jobs:
           if [ "${{ matrix.PLATFORM }}" = "aarch64" ]; then
             wget -O bin/ruri https://github.com/Moe-hacker/ruri/releases/latest/download/ruri-arm64
           elif [ "${{ matrix.PLATFORM }}" = "x86_64" ]; then
-            wget -O bin/ruri https://github.com/Moe-hacker/ruri/releases/latest/download/ruri-x84_64
+            wget -O bin/ruri https://github.com/Moe-hacker/ruri/releases/latest/download/ruri-x86_64
           else
             echo "Unsupported architecture"
             exit 1
