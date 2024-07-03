@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        PLATFORM: [aarch64]
+        PLATFORM: [aarch64, x86_64]
     steps:
       - name: Set Build Architecture
         run: |
@@ -84,7 +84,7 @@ jobs:
           sudo chown "$(id -u):$(id -u)" calibre.tar.gz
           sudo chgrp "$(id -u)" calibre.tar.gz
           sleep 5m
-          exit 0
+          #exit 0
           echo '
           FROM --platform=linux/'${{ env.ARCH }}' alpine
 
@@ -102,7 +102,7 @@ jobs:
           rm calibre.tar.gz
           docker create --name=calibre calibre
           docker export -o calibre.tar calibre
-          tar -f calibre.tar --delete .dockerenv
+          #tar -f calibre.tar --delete .dockerenv
           mkdir etc
           echo "nameserver 1.1.1.1" | sudo tee etc/resolv.conf >/dev/null
           echo "127.0.0.1 localhost" | sudo tee etc/hosts >/dev/null
