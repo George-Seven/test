@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        PLATFORM: [aarch64, x86_64]
+        PLATFORM: [aarch64]
     steps:
       - name: Set Build Architecture
         run: |
@@ -83,6 +83,8 @@ jobs:
           cd build
           sudo chown "$(id -u):$(id -u)" calibre.tar.gz
           sudo chgrp "$(id -u)" calibre.tar.gz
+          sleep 5m
+          exit 0
           echo '
           FROM --platform=linux/'${{ env.ARCH }}' alpine
 
