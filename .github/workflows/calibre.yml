@@ -70,7 +70,7 @@ jobs:
           	ebook-convert test.epub test.epub.pdf; \
           	_END_TIME="$(date "+%s")"; \
           	reset || true; "$_SFIND" / ! -type d -atime "-$(($_END_TIME-$_START_TIME+30))s" 2>/dev/null | grep -Ev "(^/proc/|^/sys/|^/dev/|^/lib/ld-musl-.*\.so|^/etc/resolv.conf$|^/etc/hosts$|^$HOME|^/var/)" | tee deps.1.txt deps.2.txt deps.ori.txt; \
-          	sed -i -E "/\/(s?bin|usr/lib/calibre/calibre/ebooks/(epub|pdf))\//d" deps.1.txt; \
+          	sed -i -E "/\/(s?bin|usr\/lib\/calibre\/calibre\/ebooks\/(epub|pdf))\//d" deps.1.txt
             find /usr/lib/calibre/calibre/ebooks/epub /usr/lib/calibre/calibre/ebooks/pdf ! -type d >> deps.1.txt; \
           	sed -i -E "/\/s?bin\/(python|calibre|ebook|pdf).*/!d" deps.2.txt; \
           	cat deps.1.txt deps.2.txt > deps.txt; \
