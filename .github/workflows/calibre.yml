@@ -102,12 +102,12 @@ jobs:
           rm calibre.tar.gz
           docker create --name=calibre calibre
           docker export -o calibre.tar calibre
-          #tar -f calibre.tar --delete .dockerenv
           mkdir etc
           echo "nameserver 1.1.1.1" | sudo tee etc/resolv.conf >/dev/null
           echo "127.0.0.1 localhost" | sudo tee etc/hosts >/dev/null
           echo "::1 localhost" | sudo tee -a etc/hosts >/dev/null
           tar -rf calibre.tar etc/resolv.conf etc/hosts
+          tar -f calibre.tar --delete .dockerenv
           gzip --best calibre.tar
 
       - name: Upload Release
