@@ -15,14 +15,14 @@ jobs:
               apt install -y dialog apt-utils && \
               apt upgrade -y && \
               apt install -y --no-install-recommends curl ca-certificates wget unzip git python3-pip python-is-python3 make cmake gcc g++ chromium && \
+              ln -s /usr/bin/chromium /usr/bin/chromium-browser && \
               curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
               source ~/.bashrc && \
               nvm install 20.11.1 && \
               git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui && \
-              cd ~/httptoolkit-ui && \
-              mkdir .httptoolkit-server && \
-              git clone --depth 1 https://github.com/httptoolkit/httptoolkit-server .httptoolkit-server/httptoolkit-server && \
-              cd .httptoolkit-server/httptoolkit-server && \
+              mkdir ~/httptoolkit-ui/.httptoolkit-server && \
+              git clone --depth 1 https://github.com/httptoolkit/httptoolkit-server ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server && \
+              cd ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server && \
               npm install && \
               cd ~/httptoolkit-ui && \
               sed -i "s/OCLIF_TS_NODE=0//g" ~/httptoolkit-ui/package.json && \
