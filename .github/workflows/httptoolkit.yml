@@ -1,0 +1,31 @@
+name: Build HTTP Toolkit for ARM64
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build HTTP Toolkit for ARM64
+        run: |
+          docker run --rm --privileged aptman/qus -s -- -p aarch64      
+          docker run --platform linux/arm64 --name httptoolkit-builder -p 8080:8080 debian:bullseye bash -c ' \
+              export DEBIAN_FRONTEND=noninteractive && \
+              apt update && \
+              apt install -y dialog apt-utils && \
+              apt upgrade -y && \
+              apt install -y --no-install-recommends curl ca-certificates wget unzip git python3-pip python-is-python3 make cmake gcc g++ chromium && \
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
+              source ~/.bashrc && \
+              nvm install 20.11.1 && \
+              git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui && \
+              cd ~/httptoolkit-ui && \
+              mkdir .httptoolkit-server && \
+              git clone --depth 1 https://github.com/httptoolkit/httptoolkit-server .httptoolkit-server/httptoolkit-server && \
+              cd .httptoolkit-server/httptoolkit-server && \
+              npm install && \
+              cd ~/httptoolkit-ui && \
+              sed -i "s/OCLIF_TS_NODE=0//g" ~/httptoolkit-ui/package.json && \
+              npm install && \
+              npm start && \
+          '
