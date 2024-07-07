@@ -11,7 +11,7 @@ jobs:
       matrix:
         ARCH: [arm, aarch64, x86, x86_64]
     steps:
-      - name: Set Build Architecture
+      - name: Set Build Platform Architecture
         run: |
           if [ "${{ matrix.ARCH }}" = "aarch64" ]; then
             echo "PLATFORM=arm64" >> $GITHUB_ENV
