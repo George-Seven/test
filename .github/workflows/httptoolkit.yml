@@ -35,7 +35,7 @@ jobs:
               docker run --rm --privileged aptman/qus -s -- -p arm
           fi
 
-          docker run -it --name httptoolkit-builder --platform "linux/${{ env.PLATFORM }}" debian:bullseye bash -c ' \
+          docker run -t --name httptoolkit-builder --platform "linux/${{ env.PLATFORM }}" debian:bullseye bash -c ' \
               export DEBIAN_FRONTEND=noninteractive && \
               apt update && \
               apt install -y dialog apt-utils && \
