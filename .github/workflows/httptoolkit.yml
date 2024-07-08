@@ -39,16 +39,16 @@ jobs:
           _HTTPTOOLKIT_LATEST_COMMIT_HASH="$(git ls-remote https://github.com/httptoolkit/httptoolkit-server HEAD | cut -f 1)"
           _NODE_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/${_HTTPTOOLKIT_LATEST_COMMIT_HASH}/package-lock.json" | jq -r '.packages."".engines.node' | sed -E "s/^v//")"
           _HTTPTOOLKIT_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/${_HTTPTOOLKIT_LATEST_COMMIT_HASH}/package-lock.json" | jq -r .version)"
-          
+
           echo '
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye AS builder
-          
+
           ENV _NODE_VERSION '$_NODE_VERSION'
           ENV _HTTPTOOLKIT_VERSION '$_HTTPTOOLKIT_VERSION'
           ENV _HTTPTOOLKIT_LATEST_COMMIT_HASH '$_HTTPTOOLKIT_LATEST_COMMIT_HASH'
-          
+
           SHELL ["/bin/bash", "-c"]
-          
+
           RUN set -eux; \
               export DEBIAN_FRONTEND=noninteractive; \
               apt update; \
@@ -76,15 +76,15 @@ jobs:
               wget -O- https://github.com/httptoolkit/httptoolkit-ui/archive/refs/heads/main.zip | bsdtar xf - -C ~/httptoolkit-ui --strip-components=1; \
               cd ~/httptoolkit-ui; \
               npm install
-              
+
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye
-          
+
           COPY --from=builder /root/httptoolkit-ui /tmp/httptoolkit-ui
-          
+
           COPY --from=builder /root/.nvm/versions/node/v'$_NODE_VERSION' /tmp/node
-          
+
           ENV PATH /opt/node/bin:$PATH
-          
+
           RUN set -eux; \
               export DEBIAN_FRONTEND=noninteractive; \
               apt update; \
@@ -96,11 +96,11 @@ jobs:
               chown -R "$(id -u httptoolkit):$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
               chgrp -R "$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
               mv /tmp/node /opt/node
-          
+
           USER httptoolkit:httptoolkit
-          
+
           WORKDIR /home/httptoolkit/httptoolkit-ui
-          
+
           CMD ["npm", "start"]
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
 
