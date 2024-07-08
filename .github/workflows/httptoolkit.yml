@@ -44,7 +44,7 @@ jobs:
               apt update && \
               apt install -y dialog apt-utils && \
               apt upgrade -y && \
-              apt install -y --no-install-recommends curl ca-certificates git python3 chromium make cmake g++ libssl-dev && \
+              apt install -y --no-install-recommends curl ca-certificates git python3 chromium xz-utils make cmake g++ libssl-dev && \
               export CHROME_BIN="$(which chromium)" && \
               update-alternatives --install /usr/bin/chromium-browser httptoolkit "$(which chromium)" 0 && \
               curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
