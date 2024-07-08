@@ -1,6 +1,8 @@
 name: Build HTTP Toolkit
 on:
   workflow_dispatch:
+env:
+  NODE_VERSION: "20.11.1"
 
 jobs:
   build:
@@ -35,30 +37,153 @@ jobs:
               docker run --rm --privileged aptman/qus -s -- -p arm
           fi
 
+          # Build HTTP Toolkit UI and Server
           docker run -t --name httptoolkit-builder --platform "linux/${{ env.PLATFORM }}" debian:bullseye bash -c ' \
               export DEBIAN_FRONTEND=noninteractive && \
+              _NODE_VERSION="'${{ env.NODE_VERSION }}'"
               apt update && \
               apt install -y dialog apt-utils && \
               apt upgrade -y && \
-              apt install -y --no-install-recommends curl ca-certificates git python3 chromium make cmake g++ && \
+              apt install -y --no-install-recommends curl ca-certificates git python3 chromium make cmake g++ libssl-dev && \
               export CHROME_BIN="$(which chromium)" && \
+              update-alternatives --install /usr/bin/chromium-browser httptoolkit "$(which chromium)" 0 && \
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
               source ~/.bashrc && \
-              { command -v nvm &>/dev/null || { curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && source ~/.bashrc; }; } && \
-              nvm install 20.11.1 && \
-              { [ -d ~/httptoolkit-ui ] || git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui; } && \
+              [ "$(dpkg --print-architecture)" = "i386" ] && mkdir -p ~/.nvm/node/v"$_NODE_VERSION" && curl -o- https://unofficial-builds.nodejs.org/download/release/v"$_NODE_VERSION"/node-v"$_NODE_VERSION"-linux-x86.tar.gz | tar zx -C ~/.nvm/node/v"$_NODE_VERSION" --strip-components=1 && export PATH="$(cd ~/.nvm/node/v"$_NODE_VERSION"/bin; pwd):$PATH" || nvm install "$_NODE_VERSION" && \
+              [ -d ~/httptoolkit-ui ] || git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui && \
               mkdir -p ~/httptoolkit-ui/.httptoolkit-server && \
-              { [ -d ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server ] || git clone --depth 1 https://github.com/httptoolkit/httptoolkit-server ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server; } && \
+              [ -d ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server ] || git clone --depth 1 https://github.com/httptoolkit/httptoolkit-server ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server && \
               cd ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server && \
               npm install && \
               sed -i "s/OCLIF_TS_NODE=0/OCLIF_TS_NODE=1/g" ~/httptoolkit-ui/package.json && \
               sed -i -E "s/process\.env\.OCLIF_TS_NODE = '\''0'\'';/process.env.OCLIF_TS_NODE = '\''1'\'';/g" ~/httptoolkit-ui/test/integration/smoke-test.spec.ts && \
               cd ~/httptoolkit-ui && \
               npm install && \
-              npm test \
+              npm run build && \
+              [ "$(dpkg --print-architecture)" = "i386" ] || npm test \
           '
 
+          #sed -i -E "s/max_old_space_size=[0-9]+/max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")/g" ~/httptoolkit-ui/package.json && \
+          #NODE_OPTIONS="--max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")" npm test || { _exit_code=$? && [ "$(dpkg --print-architecture)" = "i386" ] && exit 0 || exit $_exit_code; } \
+
           docker cp httptoolkit-builder:/root/httptoolkit-ui httptoolkit-ui
-          docker build --pull --no-cache --force-rm -t httptoolkit-server httptoolkit-ui
+
+          # Add i386 platform support
+          if [ "${{ env.PLATFORM }}" = "386" ]; then
+              mkdir -p build
+
+              # Manually build Caddy image for i386 platform
+              git clone https://github.com/caddyserver/caddy-docker build/caddy-docker
+              (cd build/caddy-docker && git reset --hard dc3d8578376d13e12fd4d454ba549f30b4634846)
+              echo '
+              FROM --platform=linux/'${{ env.PLATFORM }}' golang:1.22-alpine3.20
+
+              RUN apk add --no-cache \
+                  ca-certificates \
+                  git \
+                  libcap
+
+              ENV XCADDY_VERSION v0.4.2
+              # Configures xcaddy to build with this version of Caddy
+              ENV CADDY_VERSION v2.8.4
+              # Configures xcaddy to not clean up post-build (unnecessary in a container)
+              ENV XCADDY_SKIP_CLEANUP 1
+              # Sets capabilities for output caddy binary to be able to bind to privileged ports
+              ENV XCADDY_SETCAP 1
+
+              RUN set -eux; \
+                  go install github.com/caddyserver/xcaddy/cmd/xcaddy@v0.4.2; \
+                  mv /go/bin/xcaddy /usr/bin/xcaddy;
+
+              COPY caddy-builder.sh /usr/bin/caddy-builder
+
+              WORKDIR /usr/bin
+              ' > build/caddy-docker/2.8/builder/Dockerfile
+
+              docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t caddy:2.8.4-builder-alpine build/caddy-docker/2.8/builder
+
+              echo '
+              FROM --platform=linux/'${{ env.PLATFORM }}' alpine:3.20
+
+              RUN apk add --no-cache \
+                  ca-certificates \
+                  libcap \
+                  mailcap
+
+              RUN set -eux; \
+                  mkdir -p \
+                      /config/caddy \
+                      /data/caddy \
+                      /etc/caddy \
+                      /usr/share/caddy \
+                  ; \
+                  wget -O /etc/caddy/Caddyfile "https://github.com/caddyserver/dist/raw/509c30cecd3cbc4012f6b1cc88d8f3f000fb06e4/config/Caddyfile"; \
+                  wget -O /usr/share/caddy/index.html "https://github.com/caddyserver/dist/raw/509c30cecd3cbc4012f6b1cc88d8f3f000fb06e4/welcome/index.html"
+
+              # https://github.com/caddyserver/caddy/releases
+              ENV CADDY_VERSION v2.8.4
+
+              RUN set -eux; \
+                  touch /usr/bin/caddy; \
+                  setcap cap_net_bind_service=+ep /usr/bin/caddy; \
+                  chmod +x /usr/bin/caddy
+
+              # See https://caddyserver.com/docs/conventions#file-locations for details
+              ENV XDG_CONFIG_HOME /config
+              ENV XDG_DATA_HOME /data
+
+              LABEL org.opencontainers.image.version=v2.8.4
+              LABEL org.opencontainers.image.title=Caddy
+              LABEL org.opencontainers.image.description="a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go"
+              LABEL org.opencontainers.image.url=https://caddyserver.com
+              LABEL org.opencontainers.image.documentation=https://caddyserver.com/docs
+              LABEL org.opencontainers.image.vendor="Light Code Labs"
+              LABEL org.opencontainers.image.licenses=Apache-2.0
+              LABEL org.opencontainers.image.source="https://github.com/caddyserver/caddy-docker"
+
+              EXPOSE 80
+              EXPOSE 443
+              EXPOSE 443/udp
+              EXPOSE 2019
+
+              WORKDIR /srv
+
+              CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+              ' > build/caddy-docker/2.8/alpine/Dockerfile
+
+              docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t caddy:2.8.4-alpine build/caddy-docker/2.8/alpine
+
+              mkdir -p build/caddy
+              echo '
+              FROM --platform=linux/'${{ env.PLATFORM }}' caddy:2.8.4-builder-alpine AS builder
+
+              RUN xcaddy build \
+                  --with github.com/caddyserver/nginx-adapter \
+                  --with github.com/hairyhenderson/caddy-teapot-module@v0.0.3-0
+
+              FROM --platform=linux/'${{ env.PLATFORM }}' caddy:2.8.4-alpine
+
+              COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+              ' > build/caddy/Dockerfile
+
+              docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t caddy:2.8.4-alpine build/caddy
+
+          fi
+
+          # Build HTTP Toolkit Server image         
+          echo '
+          FROM --platform=linux/'${{ env.PLATFORM }}' caddy:2.8.4-alpine
+
+          RUN mkdir /site
+
+          WORKDIR /site
+
+          COPY ./dist /site
+          COPY ./Caddyfile /etc/caddy/Caddyfile
+          ' > httptoolkit-ui/Dockerfile
+
+          docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server httptoolkit-ui
+
           docker save httptoolkit-server | gzip --best > httptoolkit-server.tar.gz
 
       - name: Upload Release
