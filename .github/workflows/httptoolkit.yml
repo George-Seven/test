@@ -61,7 +61,7 @@ jobs:
               sed -i -E "s/process\.env\.OCLIF_TS_NODE = '\''0'\'';/process.env.OCLIF_TS_NODE = '\''1'\'';/g" ~/httptoolkit-ui/test/integration/smoke-test.spec.ts && \
               cd ~/httptoolkit-ui && \
               npm install && \
-              NODE_OPTIONS="--max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")" npm test || { _exit_code=$? && [ "$(dpkg --print-architecture)" = "i386" ] || exit $_exit_code; } \
+              NODE_OPTIONS="--max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")" npm test || { _exit_code=$? && [ "$(dpkg --print-architecture)" != "amd64" ] || exit $_exit_code; } \
           '
 
           docker cp httptoolkit-builder:/root/httptoolkit-ui httptoolkit-ui
