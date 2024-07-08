@@ -57,16 +57,12 @@ jobs:
               npm install @sentry/cli && \
               npm install && \
               sed -i "s/OCLIF_TS_NODE=0/OCLIF_TS_NODE=1/g" ~/httptoolkit-ui/package.json && \
+              sed -i -E "s/max_old_space_size=[0-9]+/max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")/g" ~/httptoolkit-ui/package.json && \
               sed -i -E "s/process\.env\.OCLIF_TS_NODE = '\''0'\'';/process.env.OCLIF_TS_NODE = '\''1'\'';/g" ~/httptoolkit-ui/test/integration/smoke-test.spec.ts && \
               cd ~/httptoolkit-ui && \
-              npm install @sentry/cli && \
               npm install && \
-              npm run build && \
-              [ "$(dpkg --print-architecture)" = "i386" ] || npm test \
+              NODE_OPTIONS="--max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")" npm test || { _exit_code=$? && [ "$(dpkg --print-architecture)" = "i386" ] || exit $_exit_code; } \
           '
-
-          #sed -i -E "s/max_old_space_size=[0-9]+/max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")/g" ~/httptoolkit-ui/package.json && \
-          #NODE_OPTIONS="--max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")" npm test || { _exit_code=$? && [ "$(dpkg --print-architecture)" = "i386" ] && exit 0 || exit $_exit_code; } \
 
           docker cp httptoolkit-builder:/root/httptoolkit-ui httptoolkit-ui
 
