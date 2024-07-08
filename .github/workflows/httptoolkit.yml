@@ -20,7 +20,7 @@ jobs:
           elif [ "${{ matrix.ARCH }}" = "x86_64" ]; then
             echo "PLATFORM=amd64" >> $GITHUB_ENV
           elif [ "${{ matrix.ARCH }}" = "arm" ]; then
-            echo "PLATFORM=arm/v7" >> $GITHUB_ENV
+            echo "PLATFORM=arm" >> $GITHUB_ENV
           elif [ "${{ matrix.ARCH }}" = "x86" ]; then
             echo "PLATFORM=386" >> $GITHUB_ENV
           else
@@ -58,6 +58,7 @@ jobs:
               sed -i "s/OCLIF_TS_NODE=0/OCLIF_TS_NODE=1/g" ~/httptoolkit-ui/package.json && \
               sed -i -E "s/process\.env\.OCLIF_TS_NODE = '\''0'\'';/process.env.OCLIF_TS_NODE = '\''1'\'';/g" ~/httptoolkit-ui/test/integration/smoke-test.spec.ts && \
               cd ~/httptoolkit-ui && \
+              npm install @sentry/cli && \
               npm install && \
               npm run build && \
               [ "$(dpkg --print-architecture)" = "i386" ] || npm test \
