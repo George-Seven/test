@@ -54,6 +54,7 @@ jobs:
               mkdir -p ~/httptoolkit-ui/.httptoolkit-server && \
               [ -d ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server ] || git clone --depth 1 https://github.com/httptoolkit/httptoolkit-server ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server && \
               cd ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server && \
+              npm install @sentry/cli && \
               npm install && \
               sed -i "s/OCLIF_TS_NODE=0/OCLIF_TS_NODE=1/g" ~/httptoolkit-ui/package.json && \
               sed -i -E "s/process\.env\.OCLIF_TS_NODE = '\''0'\'';/process.env.OCLIF_TS_NODE = '\''1'\'';/g" ~/httptoolkit-ui/test/integration/smoke-test.spec.ts && \
