@@ -97,21 +97,23 @@ jobs:
               mv /tmp/httptoolkit-ui /home/httptoolkit/httptoolkit-ui; \
               chown -R "$(id -u httptoolkit):$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
               chgrp -R "$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
-              mv /tmp/node /opt/node
+              mv /tmp/node /opt/node; \
+              du -h -d 2 /tmp/node; \
+              du -h -d 2 /tmp/node 2>&1; \
+              du -h -d 2 /tmp/node 1>&2
 
           USER httptoolkit:httptoolkit
 
           WORKDIR /home/httptoolkit/httptoolkit-ui
 
-          CMD ["npm", "start"]
+          CMD ["exec", "npm", "start"]
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
 
           docker save httptoolkit-server | gzip --best > httptoolkit-server.tar.gz
-          
+   
           du -h httptoolkit-server.tar.gz
           du -h httptoolkit-server.tar.gz 2>&1
           du -h httptoolkit-server.tar.gz 1>&2
-          
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
