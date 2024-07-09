@@ -106,7 +106,9 @@ jobs:
 
           WORKDIR /home/httptoolkit/httptoolkit-ui
           
-          ENTRYPOINT ["TINI_VERBOSITY= 0 tini", "--"]
+          ENV TINI_VERBOSITY 0 
+          
+          ENTRYPOINT ["tini", "--"]
 
           CMD ["npm", "start"]
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
