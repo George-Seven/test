@@ -77,7 +77,10 @@ jobs:
               tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-ui/.httptoolkit-server; \
               wget -O- https://github.com/httptoolkit/httptoolkit-ui/archive/refs/heads/main.zip | bsdtar xf - -C ~/httptoolkit-ui --strip-components=1; \
               cd ~/httptoolkit-ui; \
-              npm install
+              npm install; \
+              du -h -d 3 ~/httptoolkit-ui; \
+              du -h -d 3 ~/httptoolkit-ui 2>&1; \
+              du -h -d 3 ~/httptoolkit-ui 1>&2
 
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye
 
@@ -98,17 +101,17 @@ jobs:
               chown -R "$(id -u httptoolkit):$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
               chgrp -R "$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
               mv /tmp/node /opt/node; \
-              du -h -d 2 /tmp/node; \
-              du -h -d 2 /tmp/node 2>&1; \
-              du -h -d 2 /tmp/node 1>&2
+              du -h -d 2 /opt/node; \
+              du -h -d 2 /opt/node 2>&1; \
+              du -h -d 2 /opt/node 1>&2
+
+          ENV TINI_VERBOSITY 0 
+          
+          ENTRYPOINT ["tini", "--"]
 
           USER httptoolkit:httptoolkit
 
           WORKDIR /home/httptoolkit/httptoolkit-ui
-          
-          ENV TINI_VERBOSITY 0 
-          
-          ENTRYPOINT ["tini", "--"]
 
           CMD ["npm", "start"]
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
