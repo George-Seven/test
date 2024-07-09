@@ -90,7 +90,7 @@ jobs:
           RUN set -eux; \
               export DEBIAN_FRONTEND=noninteractive; \
               apt update; \
-              apt install -y --no-install-recommends dialog apt-utils sudo adduser python3 ca-certificates; \
+              apt install -y --no-install-recommends dialog apt-utils sudo adduser python3 ca-certificates tini; \
               apt clean; \
               yes "" | adduser --disabled-password httptoolkit; \
               echo "httptoolkit ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers.d/sudoaccess; \
@@ -105,8 +105,10 @@ jobs:
           USER httptoolkit:httptoolkit
 
           WORKDIR /home/httptoolkit/httptoolkit-ui
+          
+          ENTRYPOINT ["TINI_VERBOSITY= 0 tini", "--"]
 
-          CMD ["exec", "npm", "start"]
+          CMD ["npm", "start"]
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
 
           docker save httptoolkit-server | gzip --best > httptoolkit-server.tar.gz
