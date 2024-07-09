@@ -78,9 +78,7 @@ jobs:
               wget -O- https://github.com/httptoolkit/httptoolkit-ui/archive/refs/heads/main.zip | bsdtar xf - -C ~/httptoolkit-ui --strip-components=1; \
               cd ~/httptoolkit-ui; \
               npm install; \
-              du -h -d 3 ~/httptoolkit-ui; \
-              du -h -d 3 ~/httptoolkit-ui 2>&1; \
-              du -h -d 3 ~/httptoolkit-ui 1>&2
+              du -h -d 1 ~/httptoolkit-ui/.httptoolkit-server/httptoolkit-server
 
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye
 
@@ -101,13 +99,7 @@ jobs:
               chown -R "$(id -u httptoolkit):$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
               chgrp -R "$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-ui; \
               mv /tmp/node /opt/node; \
-              du -h -d 2 /opt/node; \
-              du -h -d 2 /opt/node 2>&1; \
-              du -h -d 2 /opt/node 1>&2
-
-          ENV TINI_VERBOSITY 0 
-          
-          ENTRYPOINT ["tini", "--"]
+              du -h -d 0 /opt/node
 
           USER httptoolkit:httptoolkit
 
@@ -119,8 +111,6 @@ jobs:
           docker save httptoolkit-server | gzip --best > httptoolkit-server.tar.gz
    
           du -h httptoolkit-server.tar.gz
-          du -h httptoolkit-server.tar.gz 2>&1
-          du -h httptoolkit-server.tar.gz 1>&2
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
