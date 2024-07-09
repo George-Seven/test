@@ -68,9 +68,9 @@ jobs:
               sed -i "/\('\''Building for Darwin'\''\)/,/\(buildScript, \['\''win32'\''\], { cwd: OUTPUT_DIR, stdio: '\''inherit'\'' }\)/d" ~/httptoolkit-server/pack.ts; \
               npm install @sentry/cli; \
               npm run prepare; \
-              [ "$(dpkg --print-architecture)" != "i386" ] || sed -i -E "/(download|tarball).*shasums/Id" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
-              [ "$(dpkg --print-architecture)" != "i386" ] || sed -i "s/let nodeBase = \`node-v/if \(arch === '\''ia32'\''\)\n        arch = '\''x86'\'';\n    let nodeBase = \`node-v/g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
-              [ "$(dpkg --print-architecture)" != "i386" ] || sed -i "s#let url = \`https://nodejs.org/dist/v#let url = \`https://unofficial-builds.nodejs.org/download/release/v#g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
+              [ "$(dpkg --print-architecture)" = "i386" ] && sed -i -E "/(download|tarball).*shasums/Id" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
+              [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s/let nodeBase = \`node-v/if \(arch === '\''ia32'\''\)\n        arch = '\''x86'\'';\n    let nodeBase = \`node-v/g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
+              [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s#let url = \`https://nodejs.org/dist/v#let url = \`https://unofficial-builds.nodejs.org/download/release/v#g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
               npm run build:release; \
               mkdir -p ~/httptoolkit-ui/.httptoolkit-server; \
               tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-ui/.httptoolkit-server; \
