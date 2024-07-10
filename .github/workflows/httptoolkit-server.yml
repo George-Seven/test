@@ -82,26 +82,13 @@ jobs:
 
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
 
-          COPY --from=builder /root/httptoolkit-server /tmp/httptoolkit-server
-
-          RUN set -eux; \
-              export DEBIAN_FRONTEND=noninteractive; \
-              apt update; \
-              apt install -y --no-install-recommends dialog apt-utils sudo adduser; \
-              apt clean; \
-              apt autoclean; \
-              apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-              yes "" | adduser --disabled-password httptoolkit; \
-              echo "httptoolkit ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers.d/sudoaccess; \
-              mv /tmp/httptoolkit-server /home/httptoolkit/httptoolkit-server; \
-              chown -R "$(id -u httptoolkit):$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-server; \
-              chgrp -R "$(id -u httptoolkit)" /home/httptoolkit/httptoolkit-server
-
           USER httptoolkit:httptoolkit
 
-          WORKDIR /home/httptoolkit/httptoolkit-server
+          WORKDIR /root/httptoolkit-server
 
           CMD ["bin/httptookit-server", "start"]
+          
+          COPY --from=builder /root/httptoolkit-server /root/httptoolkit-server
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
 
           docker save httptoolkit-server | gzip --best > httptoolkit-server.tar.gz
