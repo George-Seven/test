@@ -91,7 +91,6 @@ jobs:
               apt clean; \
               apt autoclean; \
               apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-              
               yes "" | adduser --disabled-password httptoolkit; \
               echo "httptoolkit ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers.d/sudoaccess; \
               mv /tmp/httptoolkit-server /home/httptoolkit/httptoolkit-server; \
