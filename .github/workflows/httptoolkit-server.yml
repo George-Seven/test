@@ -82,13 +82,13 @@ jobs:
 
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
 
+          COPY --from=builder /root/httptoolkit-server /root/httptoolkit-server
+
           USER httptoolkit:httptoolkit
 
           WORKDIR /root/httptoolkit-server
 
-          CMD ["bin/httptookit-server", "start"]
-          
-          COPY --from=builder /root/httptoolkit-server /root/httptoolkit-server
+          CMD ["bin/httptoolkit-server", "start"]
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
 
           docker save httptoolkit-server | gzip --best > httptoolkit-server.tar.gz
