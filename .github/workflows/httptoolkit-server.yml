@@ -66,9 +66,9 @@ jobs:
               git clone  https://github.com/httptoolkit/httptoolkit-server ~/httptoolkit-server; \
               cd ~/httptoolkit-server; \
               git reset --hard $_HTTPTOOLKIT_LATEST_COMMIT_HASH; \
+              [ "$(dpkg --print-architecture)" != "arm64" ] && dpkg --print-architecture | grep -q arm && npm install @sentry/cli; \
               sed -i "/\('\''Building for Darwin'\''\)/,/\(buildScript, \['\''win32'\''\], { cwd: OUTPUT_DIR, stdio: '\''inherit'\'' }\)/d" ~/httptoolkit-server/pack.ts; \
               npm ci; \
-              [ "$(dpkg --print-architecture)" != "arm64" ] && dpkg --print-architecture | grep -q arm && npm update @sentry/cli; \
               [ "$(dpkg --print-architecture)" = "i386" ] && sed -i -E "/(download|tarball).*shasums/Id" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
               [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s/let nodeBase = \`node-v/if \(arch === '\''ia32'\''\)\n        arch = '\''x86'\'';\n    let nodeBase = \`node-v/g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
               [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s#let url = \`https://nodejs.org/dist/v#let url = \`https://unofficial-builds.nodejs.org/download/release/v#g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
