@@ -76,7 +76,7 @@ jobs:
               npm run build:release; \
               mkdir -p ~/httptoolkit-server-release; \
               tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-server-release --strip-components=1; \
-              [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm install --omit=dev ); \
+              [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && ls -rla prebuilts && rm -rf build node_modules && npm install --omit=dev ); \
               rm -rf ~/httptoolkit-server; \
               mv ~/httptoolkit-server-release ~/httptoolkit-server
 
