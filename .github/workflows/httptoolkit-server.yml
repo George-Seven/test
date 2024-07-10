@@ -63,7 +63,6 @@ jobs:
               curl -sLo- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; \
               source ~/.bashrc; \
               [ "$(dpkg --print-architecture)" = "i386" ] && mkdir -p ~/.nvm/versions/node/v${_NODE_VERSION} && curl -o- https://unofficial-builds.nodejs.org/download/release/v${_NODE_VERSION}/node-v${_NODE_VERSION}-linux-x86.tar.gz | tar zx -C ~/.nvm/versions/node/v${_NODE_VERSION} --strip-components=1 && nvm use $_NODE_VERSION && nvm alias default $_NODE_VERSION || nvm install $_NODE_VERSION; \
-              npm install -g clean-modules; \
               git clone  https://github.com/httptoolkit/httptoolkit-server ~/httptoolkit-server; \
               cd ~/httptoolkit-server; \
               git reset --hard $_HTTPTOOLKIT_LATEST_COMMIT_HASH; \
@@ -77,10 +76,9 @@ jobs:
               npm run build:release; \
               mkdir -p ~/httptoolkit-server-release; \
               tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-server-release --strip-components=1; \
+              [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm ci --omit=dev ); \
               rm -rf ~/httptoolkit-server; \
-              mv ~/httptoolkit-server-release ~/httptoolkit-server; \
-              [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm ci --omit=dev ); \
-              clean-modules clean -y -k -D ~/httptoolkit-server/node_modules
+              mv ~/httptoolkit-server-release ~/httptoolkit-server
 
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
 
