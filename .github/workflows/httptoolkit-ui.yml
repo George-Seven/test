@@ -168,9 +168,9 @@ jobs:
 
           FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_CADDY_VERSION'-alpine
 
-          COPY --from=builder /root/httptoolkit-server/dist /site
+          COPY --from=builder /root/httptoolkit-ui/dist /site
           
-          COPY --from=builder /root/httptoolkit-server/Caddyfile /etc/caddy/Caddyfile
+          COPY --from=builder /root/httptoolkit-ui/Caddyfile /etc/caddy/Caddyfile
 
           WORKDIR /site
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-ui -
