@@ -35,7 +35,7 @@ jobs:
           elif [[ "${{ matrix.ARCH }}" == "arm" ]]; then
               docker run --rm --privileged aptman/qus -s -- -p arm
           fi
-          
+          set -eux
           _XCADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/xcaddy/tags | jq -r .[0].name)"
           _CADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/caddy/tags | jq -r .[0].name)"
           # Add i386 platform support for Caddy
