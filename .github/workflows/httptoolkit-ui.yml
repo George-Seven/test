@@ -36,8 +36,8 @@ jobs:
               docker run --rm --privileged aptman/qus -s -- -p arm
           fi
 
-          _XCADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/xcaddy/tags | jq -r .[0].name)"
-          _CADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/caddy/tags | jq -r .[0].name)"
+          _XCADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/xcaddy/tags | jq -r .[0].name | sed -E "s/^v//")"
+          _CADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/caddy/tags | jq -r .[0].name | sed -E "s/^v//")"
           # Add i386 platform support for Caddy
           if [ "${{ env.PLATFORM }}" = "386" ]; then
               mkdir -p build
@@ -51,16 +51,16 @@ jobs:
                   git \
                   libcap
 
-              ENV XCADDY_VERSION '$_XCADDY_VERSION'
+              ENV XCADDY_VERSION v'$_XCADDY_VERSION'
               # Configures xcaddy to build with this version of Caddy
-              ENV CADDY_VERSION '$_CADDY_VERSION'
+              ENV CADDY_VERSION v'$_CADDY_VERSION'
               # Configures xcaddy to not clean up post-build (unnecessary in a container)
               ENV XCADDY_SKIP_CLEANUP 1
               # Sets capabilities for output caddy binary to be able to bind to privileged ports
               ENV XCADDY_SETCAP 1
 
               RUN set -eux; \
-                  go install github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}; \
+                  go install github.com/caddyserver/xcaddy/cmd/xcaddy@v${XCADDY_VERSION}; \
                   mv "$(go env GOPATH)/bin/xcaddy" /usr/bin/xcaddy
 
               COPY caddy-builder.sh /usr/bin/caddy-builder
@@ -89,7 +89,7 @@ jobs:
                   wget -O /usr/share/caddy/index.html "https://github.com/caddyserver/dist/raw/master/welcome/index.html"
 
               # https://github.com/caddyserver/caddy/releases
-              ENV CADDY_VERSION '$_CADDY_VERSION'
+              ENV CADDY_VERSION v'$_CADDY_VERSION'
 
               RUN set -eux; \
                   touch /usr/bin/caddy; \
@@ -100,7 +100,7 @@ jobs:
               ENV XDG_CONFIG_HOME /config
               ENV XDG_DATA_HOME /data
 
-              LABEL org.opencontainers.image.version='$_CADDY_VERSION'
+              LABEL org.opencontainers.image.version='v$_CADDY_VERSION'
               LABEL org.opencontainers.image.title=Caddy
               LABEL org.opencontainers.image.description="a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go"
               LABEL org.opencontainers.image.url=https://caddyserver.com
@@ -169,7 +169,7 @@ jobs:
 
           COPY --from=builder /root/httptoolkit-server/dist /site
           
-          COPY /root/httptoolkit-server/Caddyfile /etc/caddy/Caddyfile
+          COPY --from=builder /root/httptoolkit-server/Caddyfile /etc/caddy/Caddyfile
 
           WORKDIR /site
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-ui -
