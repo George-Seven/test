@@ -35,7 +35,7 @@ jobs:
           elif [[ "${{ matrix.ARCH }}" == "arm" ]]; then
               docker run --rm --privileged aptman/qus -s -- -p arm
           fi
-          set -eux
+
           _XCADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/xcaddy/tags | jq -r .[0].name)"
           _CADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/caddy/tags | jq -r .[0].name)"
           # Add i386 platform support for Caddy
@@ -137,15 +137,12 @@ jobs:
           fi
 
           # Build HTTP Toolkit UI
-          _NODE_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/${_HTTPTOOLKIT_LATEST_COMMIT_HASH}/package-lock.json" | jq -r '.packages."".engines.node' | sed -E "s/^v//")"
-          _HTTPTOOLKIT_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/${_HTTPTOOLKIT_LATEST_COMMIT_HASH}/package-lock.json" | jq -r .version)"
+          _NODE_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/main/package-lock.json" | jq -r '.packages."".engines.node' | sed -E "s/^v//")"
 
           echo '
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye AS builder
 
           ENV _NODE_VERSION '$_NODE_VERSION'
-          ENV _HTTPTOOLKIT_VERSION '$_HTTPTOOLKIT_VERSION'
-          ENV _HTTPTOOLKIT_LATEST_COMMIT_HASH '$_HTTPTOOLKIT_LATEST_COMMIT_HASH'
 
           SHELL ["/bin/bash", "-c"]
 
