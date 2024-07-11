@@ -69,7 +69,7 @@ jobs:
               [ "$(dpkg --print-architecture)" != "arm64" ] && dpkg --print-architecture | grep -q arm && npm install @sentry/cli; \
               sed -i "/\('\''Building for Darwin'\''\)/,/\(buildScript, \['\''win32'\''\], { cwd: OUTPUT_DIR, stdio: '\''inherit'\'' }\)/d" ~/httptoolkit-server/pack.ts; \
               npm ci; \
-              sed -i "s/export const ALLOWED_ORIGINS = IS_PROD_BUILD/export const ALLOWED_ORIGINS = \!IS_PROD_BUILD/g" ~/httptoolkit-server/src/constants.ts; \
+              sed -i "s/export const ALLOWED_ORIGINS = .*/export const ALLOWED_ORIGINS = false/g" ~/httptoolkit-server/src/constants.ts; \
               [ "$(dpkg --print-architecture)" = "i386" ] && sed -i -E "/(download|tarball).*shasums/Id" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
               [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s/let nodeBase = \`node-v/if \(arch === '\''ia32'\''\)\n        arch = '\''x86'\'';\n    let nodeBase = \`node-v/g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
               [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s#let url = \`https://nodejs.org/dist/v#let url = \`https://unofficial-builds.nodejs.org/download/release/v#g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
