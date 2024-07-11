@@ -162,6 +162,7 @@ jobs:
               git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui; \
               sed -i -E "s/max_old_space_size=[0-9]+/max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")/g" ~/httptoolkit-ui/package.json; \
               jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \ 
+              cd ~/httptoolkit-ui; \
               npm ci; \
               npm run build
 
