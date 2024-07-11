@@ -76,15 +76,14 @@ jobs:
               npm run build:release; \
               mkdir -p ~/httptoolkit-server-release; \
               tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-server-release --strip-components=1; \
-              [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && ls -rla pre* && rm -rf build node_modules && npm install --omit=dev ); \
+              [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && du -h -d 1 . | sort -h && rm -rf build node_modules && npm install --omit=dev && du -h -d 0 . ); \
               rm -rf ~/httptoolkit-server; \
-              mv ~/httptoolkit-server-release ~/httptoolkit-server
+              mv ~/httptoolkit-server-release ~/httptoolkit-server; \
+              du -h -d 2 ~/httptoolkit-server | sort -h
 
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
 
           COPY --from=builder /root/httptoolkit-server /root/httptoolkit-server
-
-          USER httptoolkit:httptoolkit
 
           WORKDIR /root/httptoolkit-server
 
