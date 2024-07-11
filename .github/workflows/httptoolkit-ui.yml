@@ -161,6 +161,7 @@ jobs:
               [ "$(dpkg --print-architecture)" = "i386" ] && mkdir -p ~/.nvm/versions/node/v${_NODE_VERSION} && curl -o- https://unofficial-builds.nodejs.org/download/release/v${_NODE_VERSION}/node-v${_NODE_VERSION}-linux-x86.tar.gz | tar zx -C ~/.nvm/versions/node/v${_NODE_VERSION} --strip-components=1 && nvm use $_NODE_VERSION && nvm alias default $_NODE_VERSION || nvm install $_NODE_VERSION; \
               git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui; \
               sed -i -E "s/max_old_space_size=[0-9]+/max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")/g" ~/httptoolkit-ui/package.json; \
+              sed -i "s/webpack\.prod\.ts/webpack.dev.ts/g" package.json; \
               jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \ 
               cd ~/httptoolkit-ui; \
               npm ci; \
