@@ -162,10 +162,11 @@ jobs:
               git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui; \
               sed -i -E "s/max_old_space_size=[0-9]+/max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")/g" ~/httptoolkit-ui/package.json; \
               sed -i "s/webpack\.prod\.ts/webpack.dev.ts/g" ~/httptoolkit-ui/package.json; \
-              jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \ 
+              jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \
+              sed -i "/import \/site\/csp\.caddyfile/d" Caddyfile
               cd ~/httptoolkit-ui; \
               npm ci; \
-              UI_VERSION='${{ github.sha }}' REPORT_URI=null npm run build
+              npm run build
 
           FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_CADDY_VERSION'-alpine
 
