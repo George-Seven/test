@@ -60,7 +60,7 @@ jobs:
               ENV XCADDY_SETCAP 1
 
               RUN set -eux; \
-                  go install github.com/caddyserver/xcaddy/cmd/xcaddy@v${XCADDY_VERSION}; \
+                  go install github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}; \
                   mv "$(go env GOPATH)/bin/xcaddy" /usr/bin/xcaddy
 
               COPY caddy-builder.sh /usr/bin/caddy-builder
@@ -100,7 +100,7 @@ jobs:
               ENV XDG_CONFIG_HOME /config
               ENV XDG_DATA_HOME /data
 
-              LABEL org.opencontainers.image.version='v$_CADDY_VERSION'
+              LABEL org.opencontainers.image.version=$CADDY_VERSION
               LABEL org.opencontainers.image.title=Caddy
               LABEL org.opencontainers.image.description="a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go"
               LABEL org.opencontainers.image.url=https://caddyserver.com
@@ -151,7 +151,7 @@ jobs:
               apt update; \
               apt install -y dialog apt-utils; \
               apt upgrade -y; \
-              apt install -y --no-install-recommends curl ca-certificates git python3 xz-utils moreutils make file cmake g++ libssl-dev; \
+              apt install -y --no-install-recommends curl ca-certificates git python3 jq xz-utils moreutils make file cmake g++ libssl-dev; \
               update-alternatives --install /usr/bin/chromium httptoolkit "$(which true)" 0; \
               update-alternatives --install /usr/bin/chromium-browser httptoolkit "$(which chromium)" 0; \
               export CHROME_BIN="$(which chromium)"; \
