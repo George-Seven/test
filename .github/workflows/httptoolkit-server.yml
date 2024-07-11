@@ -78,8 +78,7 @@ jobs:
               tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-server-release --strip-components=1; \
               rm -rf ~/httptoolkit-server; \
               mv ~/httptoolkit-server-release ~/httptoolkit-server; \
-              [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm ci --omit=dev ); \
-              du -h -d 3 ~/httptoolkit-server | sort -h
+              [ "$(dpkg --print-architecture)" != "i386" ] || [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm ci --omit=dev )
 
           FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
 
@@ -91,8 +90,6 @@ jobs:
           ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
 
           docker save httptoolkit-server | gzip --best > httptoolkit-server.tar.gz
-   
-          du -h httptoolkit-server.tar.gz
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
