@@ -164,7 +164,7 @@ jobs:
               jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \ 
               cd ~/httptoolkit-ui; \
               npm ci; \
-              npm run build
+              UI_VERSION='${{ github.sha }}' REPORT_URI=null npm run build
 
           FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_CADDY_VERSION'-alpine
 
