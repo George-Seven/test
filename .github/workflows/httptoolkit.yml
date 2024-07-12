@@ -9,8 +9,8 @@ jobs:
       contents: write
     strategy:
       matrix:
-        ARCH: [arm, aarch64, x86, x86_64]
         IMAGE: [ui, server, electron]
+        ARCH: [arm, aarch64, x86, x86_64]
       fail-fast: false
     steps:
       - name: Set Build Platform Architecture
@@ -280,7 +280,7 @@ jobs:
                   cd ~/httptoolkit-pro-patcher; \
                   npm install; \
                   echo "user@localhost" | npm start; \
-                  rm -rf /opt/httptoolkit/resources/app.asar.bak
+                  rm -rf /opt/httptoolkit/resources/app.asar.bak; \
                   mv /opt/httptoolkit/httptoolkit /opt/httptoolkit/httptoolkit.bin; \
                   echo -n "#!" > /opt/httptoolkit/httptoolkit; \
                   echo -en '\''/bin/sh\n[ $(id -u) -eq 0 ] && exec httptoolkit.bin --no-sandbox "$@" || exec httptoolkit.bin "$@"'\'' >> /opt/httptoolkit/httptoolkit; \
