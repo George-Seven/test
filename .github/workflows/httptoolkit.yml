@@ -311,6 +311,7 @@ jobs:
                   apt clean; \
                   apt autoclean; \
                   apt autoremove; \
+                  addgroup --gid 1000 httptoolkit; \
                   yes "" | adduser --uid 1000 --gid 1000 --disabled-password httptoolkit
 
               USER 1000:1000
