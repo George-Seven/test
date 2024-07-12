@@ -253,6 +253,8 @@ jobs:
               COPY --from=httptoolkit-server /root/httptoolkit-server /root/httptoolkit-server
               
               ENV _NODE_VERSION '$_NODE_VERSION'
+              
+              SHELL ["/bin/bash", "-c"]
     
               RUN set -eux; \
                   export DEBIAN_FRONTEND=noninteractive; \
@@ -281,7 +283,7 @@ jobs:
                   rm -rf /opt/httptoolkit/resources/app.asar.bak; \
                   mv /opt/httptoolkit/httptoolkit /opt/httptoolkit/httptoolkit.bin; \
                   echo -n "#!" > /opt/httptoolkit/httptoolkit; \
-                  echo -en '\''/bin/sh\n[ $(id -u) -eq 0 ] && exec httptoolkit.bin --no-sandbox "$@" || exec httptoolkit.bin "$@"'\'' >> /opt/httptoolkit/httptoolkit; \
+                  echo -en '\''/bin/sh\nexec httptoolkit.bin --no-sandbox "$@"'\'' >> /opt/httptoolkit/httptoolkit; \
                   chmod 755 /opt/httptoolkit/httptoolkit
     
               FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
@@ -307,7 +309,7 @@ jobs:
                 
               WORKDIR /home/httptoolkit
               
-              CMD ["/bin/bash", "-c", "vncserver -kill $DISPLAY &>/dev/null; vncserver -SecurityTypes None,TLSNone -localhost no $DISPLAY; httptoolkit"]
+              CMD ["/bin/bash", "-c", "vncserver -kill $DISPLAY &>/dev/null; vncserver -SecurityTypes None,TLSNone -localhost $DISPLAY; httptoolkit"]
               ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-electron -
     
               docker save httptoolkit-electron | gzip --best > dist/httptoolkit-electron.tar.gz
