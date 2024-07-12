@@ -285,9 +285,13 @@ jobs:
                   echo "user@localhost" | npm start; \
                   rm -rf /opt/httptoolkit/resources/app.asar.bak; \
                   mv /opt/httptoolkit/httptoolkit /opt/httptoolkit/httptoolkit.bin; \
-                  echo -n "#!" > /opt/httptoolkit/httptoolkit; \
-                  echo -en '\''/bin/sh\nexec httptoolkit.bin --no-sandbox "$@"'\'' >> /opt/httptoolkit/httptoolkit; \
-                  chmod 755 /opt/httptoolkit/httptoolkit
+                  echo -n "#!" | tee /opt/httptoolkit/{httptoolkit,start-httptoolkit.sh}; \
+                  echo -en "/bin/sh\n" | tee -a /opt/httptoolkit/{httptoolkit,start-httptoolkit.sh}; \
+                  echo -en '\''echo "$PATH" | grep -q "$(cd "$(dirname "$0")"; pwd):" || export PATH="$(cd "$(dirname "$0")"; pwd):$PATH"; exec httptoolkit.bin --no-sandbox "$@"'\'' >> /opt/httptoolkit/httptoolkit; \
+                  echo '\''$(while true; do timeout 10s adb connect "$(ip route get 8.8.8.8 | awk '\''\'\'''\''{ for(i=1; i<=NF; i++) { if($i == "via") { print $(i+1); break; } } }'\''\'\'''\''):5555" 2>/dev/null >/dev/null; sleep 5; done) &'\'' >> /opt/httptoolkit/start-httptoolkit.sh; \
+                  echo '\''vncserver -clean -kill "$DISPLAY" 2>/dev/null >/dev/null; rm -rf "$(dirname "$(mktemp -u)")/*.vncpasswd"; [ -z "$VNC_PASSWD" ] && vncserver -xstartup openbox-session -SecurityTypes None,TLSNone -localhost no --I-KNOW-THIS-IS-INSECURE "$DISPLAY" && exec httptoolkit'\'' >> /opt/httptoolkit/start-httptoolkit.sh; \
+                  echo '\''[ -n "$VNC_PASSWD" ] && _VNC_PASSWD_FILE="$(mktemp -u --suffix .vncpasswd)" && echo "$VNC_PASSWD" | vncpasswd -f > "$_VNC_PASSWD_FILE" && unset VNC_PASSWD && vncserver -xstartup openbox-session -SecurityTypes VncAuth -passwd "$_VNC_PASSWD_FILE" -localhost no "$DISPLAY" && exec httptoolkit'\'' >> /opt/httptoolkit/start-httptoolkit.sh; \
+                  chmod 755 /opt/httptoolkit/{httptoolkit,start-httptoolkit.sh}
     
               FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
     
@@ -302,21 +306,19 @@ jobs:
                   apt update; \
                   apt install -y dialog apt-utils; \
                   apt upgrade -y; \
-                  apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 curl ca-certificates adduser adb tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
+                  apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 curl ca-certificates adduser adb iproute2 tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
                   apt clean; \
                   apt autoclean; \
                   apt autoremove; \
-                  yes "" | adduser --disabled-password httptoolkit
+                  yes "" | adduser --disabled-password httptoolkit; \
+                  timeout 30s start-httptoolkit.sh || true; \
+                  vncserver -clean -kill $DISPLAY
 
               USER httptoolkit:httptoolkit
                 
               WORKDIR /home/httptoolkit
               
-              RUN set -eux; \
-                  vncserver -SecurityTypes None,TLSNone -localhost $DISPLAY; \
-                  timeout 30s httptoolkit || true
-              
-              CMD ["/bin/bash", "-c", "vncserver -kill $DISPLAY &>/dev/null; vncserver -SecurityTypes None,TLSNone -localhost $DISPLAY; httptoolkit"]
+              CMD ["start-httptoolkit.sh"]
               ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-electron -
     
               docker save httptoolkit-electron | gzip --best > dist/httptoolkit-electron.tar.gz
