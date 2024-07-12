@@ -1,0 +1,324 @@
+name: Build HTTP Toolkit
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        IMAGE: [ui, server, electron]
+        ARCH: [arm, aarch64, x86, x86_64]
+      fail-fast: false
+    steps:
+      - name: Set Build Platform Architecture
+        run: |
+          if [ "${{ matrix.ARCH }}" = "aarch64" ]; then
+            echo "PLATFORM=arm64" >> $GITHUB_ENV
+          elif [ "${{ matrix.ARCH }}" = "x86_64" ]; then
+            echo "PLATFORM=amd64" >> $GITHUB_ENV
+          elif [ "${{ matrix.ARCH }}" = "arm" ]; then
+            echo "PLATFORM=arm" >> $GITHUB_ENV
+          elif [ "${{ matrix.ARCH }}" = "x86" ]; then
+            echo "PLATFORM=386" >> $GITHUB_ENV
+          else
+            echo "Unsupported architecture"
+            exit 1
+          fi
+
+      - name: Build HTTP Toolkit ${{ matrix.IMAGE == 'ui' && 'UI' || matrix.IMAGE == 'server' && 'Server' || matrix.IMAGE == 'electron' && 'Electron' }} For ${{ matrix.ARCH }}
+        run: |   
+          # Support for ARM and ARM64
+          if [ "${{ matrix.ARCH }}" = "aarch64" ]; then
+              docker run --rm --privileged aptman/qus -s -- -p aarch64
+          elif [ "${{ matrix.ARCH }}" = "arm" ]; then
+              docker run --rm --privileged aptman/qus -s -- -p arm
+          fi
+          
+          # Electron doesn't support x86, skip build
+          if [ "${{ matrix.ARCH }}" = "x86" ] && [ "${{ matrix.IMAGE }}" = "electron" ]; then
+              echo "Electron doesn't support x86"
+              exit 0
+          fi
+          
+          mkdir -p build dist
+          
+          # Build HTTP Toolkit UI
+          if [ "${{ matrix.IMAGE }}" = "ui" ]; then
+              _XCADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/xcaddy/tags | jq -r .[0].name | sed -E "s/^v//")"
+              _CADDY_VERSION="$(curl -sLo- https://api.github.com/repos/caddyserver/caddy/tags | jq -r .[0].name | sed -E "s/^v//")"
+              # Add i386 platform support for Caddy
+              if [ "${{ env.PLATFORM }}" = "386" ]; then
+                  git clone --depth 1 https://github.com/caddyserver/caddy-docker build/caddy-docker
+                  echo '
+                  FROM --platform=linux/'${{ env.PLATFORM }}' golang:1.22-alpine3.20
+    
+                  RUN apk add --no-cache \
+                      ca-certificates \
+                      git \
+                      libcap
+    
+                  ENV XCADDY_VERSION v'$_XCADDY_VERSION'
+                  # Configures xcaddy to build with this version of Caddy
+                  ENV CADDY_VERSION v'$_CADDY_VERSION'
+                  # Configures xcaddy to not clean up post-build (unnecessary in a container)
+                  ENV XCADDY_SKIP_CLEANUP 1
+                  # Sets capabilities for output caddy binary to be able to bind to privileged ports
+                  ENV XCADDY_SETCAP 1
+    
+                  RUN set -eux; \
+                      go install github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}; \
+                      mv "$(go env GOPATH)/bin/xcaddy" /usr/bin/xcaddy
+    
+                  COPY caddy-builder.sh /usr/bin/caddy-builder
+    
+                  WORKDIR /usr/bin
+                  ' > build/caddy-docker/2.8/builder/Dockerfile
+    
+                  docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t "caddy:${_XCADDY_VERSION}-builder-alpine" build/caddy-docker/2.8/builder
+    
+                  echo '
+                  FROM --platform=linux/'${{ env.PLATFORM }}' alpine:3.20
+    
+                  RUN apk add --no-cache \
+                      ca-certificates \
+                      libcap \
+                      mailcap
+    
+                  RUN set -eux; \
+                      mkdir -p \
+                          /config/caddy \
+                          /data/caddy \
+                          /etc/caddy \
+                          /usr/share/caddy \
+                      ; \
+                      wget -O /etc/caddy/Caddyfile "https://github.com/caddyserver/dist/raw/master/config/Caddyfile"; \
+                      wget -O /usr/share/caddy/index.html "https://github.com/caddyserver/dist/raw/master/welcome/index.html"
+    
+                  # https://github.com/caddyserver/caddy/releases
+                  ENV CADDY_VERSION v'$_CADDY_VERSION'
+    
+                  RUN set -eux; \
+                      touch /usr/bin/caddy; \
+                      setcap cap_net_bind_service=+ep /usr/bin/caddy; \
+                      chmod +x /usr/bin/caddy
+    
+                  # See https://caddyserver.com/docs/conventions#file-locations for details
+                  ENV XDG_CONFIG_HOME /config
+                  ENV XDG_DATA_HOME /data
+    
+                  LABEL org.opencontainers.image.version=$CADDY_VERSION
+                  LABEL org.opencontainers.image.title=Caddy
+                  LABEL org.opencontainers.image.description="a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go"
+                  LABEL org.opencontainers.image.url=https://caddyserver.com
+                  LABEL org.opencontainers.image.documentation=https://caddyserver.com/docs
+                  LABEL org.opencontainers.image.vendor="Light Code Labs"
+                  LABEL org.opencontainers.image.licenses=Apache-2.0
+                  LABEL org.opencontainers.image.source="https://github.com/caddyserver/caddy-docker"
+    
+                  EXPOSE 80
+                  EXPOSE 443
+                  EXPOSE 443/udp
+                  EXPOSE 2019
+    
+                  WORKDIR /srv
+    
+                  CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+                  ' > build/caddy-docker/2.8/alpine/Dockerfile
+    
+                  docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t "caddy:${_CADDY_VERSION}-alpine" build/caddy-docker/2.8/alpine
+    
+                  mkdir -p build/caddy
+                  echo '
+                  FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_XCADDY_VERSION'-builder-alpine AS builder
+    
+                  RUN xcaddy build
+    
+                  FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_CADDY_VERSION'-alpine
+    
+                  COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+                  ' > build/caddy/Dockerfile
+    
+                  docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t "caddy:${_CADDY_VERSION}-alpine" build/caddy
+              fi
+    
+              _NODE_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/main/package-lock.json" | jq -r '.packages."".engines.node' | sed -E "s/^v//")"
+    
+              echo '
+              FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye AS builder
+    
+              ENV _NODE_VERSION '$_NODE_VERSION'
+    
+              SHELL ["/bin/bash", "-c"]
+    
+              RUN set -eux; \
+                  export DEBIAN_FRONTEND=noninteractive; \
+                  apt update; \
+                  apt install -y dialog apt-utils; \
+                  apt upgrade -y; \
+                  apt install -y --no-install-recommends curl ca-certificates git python3 jq xz-utils moreutils make file cmake g++ libssl-dev; \
+                  update-alternatives --install /usr/bin/chromium httptoolkit "$(which true)" 0; \
+                  update-alternatives --install /usr/bin/chromium-browser httptoolkit "$(which chromium)" 0; \
+                  export CHROME_BIN="$(which chromium)"; \
+                  touch ~/.bashrc; \
+                  curl -sLo- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; \
+                  source ~/.bashrc; \
+                  [ "$(dpkg --print-architecture)" = "i386" ] && mkdir -p ~/.nvm/versions/node/v${_NODE_VERSION} && curl -o- https://unofficial-builds.nodejs.org/download/release/v${_NODE_VERSION}/node-v${_NODE_VERSION}-linux-x86.tar.gz | tar zx -C ~/.nvm/versions/node/v${_NODE_VERSION} --strip-components=1 && nvm use $_NODE_VERSION && nvm alias default $_NODE_VERSION || nvm install $_NODE_VERSION; \
+                  git clone --depth 1 https://github.com/httptoolkit/httptoolkit-ui ~/httptoolkit-ui; \
+                  sed -i -E "s/max_old_space_size=[0-9]+/max_old_space_size=$(free -tm | grep Total | awk "{print \$2}")/g" ~/httptoolkit-ui/package.json; \
+                  jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \
+                  cd ~/httptoolkit-ui; \
+                  npm ci; \
+                  UI_VERSION='${{ github.sha }}' REPORT_URI=null npm run build
+    
+              FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_CADDY_VERSION'-alpine
+    
+              COPY --from=builder /root/httptoolkit-ui/dist /site
+              
+              COPY --from=builder /root/httptoolkit-ui/Caddyfile /etc/caddy/Caddyfile
+    
+              WORKDIR /site
+              ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-ui -
+    
+              docker save httptoolkit-ui | gzip --best > dist/httptoolkit-ui.tar.gz
+          fi
+          
+          # Build HTTP Toolkit Server
+          if [ "${{ matrix.IMAGE }}" = "server" ] || [ "${{ matrix.IMAGE }}" = "electron" ]; then
+              _HTTPTOOLKIT_LATEST_COMMIT_HASH="$(git ls-remote https://github.com/httptoolkit/httptoolkit-server HEAD | cut -f 1)"
+              _NODE_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/${_HTTPTOOLKIT_LATEST_COMMIT_HASH}/package-lock.json" | jq -r '.packages."".engines.node' | sed -E "s/^v//")"
+              _HTTPTOOLKIT_VERSION="$(curl -sL "https://github.com/httptoolkit/httptoolkit-server/raw/${_HTTPTOOLKIT_LATEST_COMMIT_HASH}/package-lock.json" | jq -r .version)"
+    
+              echo '
+              FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye AS builder
+    
+              ENV _NODE_VERSION '$_NODE_VERSION'
+              ENV _HTTPTOOLKIT_VERSION '$_HTTPTOOLKIT_VERSION'
+              ENV _HTTPTOOLKIT_LATEST_COMMIT_HASH '$_HTTPTOOLKIT_LATEST_COMMIT_HASH'
+    
+              SHELL ["/bin/bash", "-c"]
+    
+              RUN set -eux; \
+                  export DEBIAN_FRONTEND=noninteractive; \
+                  apt update; \
+                  apt install -y dialog apt-utils; \
+                  apt upgrade -y; \
+                  apt install -y --no-install-recommends curl ca-certificates git python3 xz-utils make file cmake g++ libssl-dev; \
+                  update-alternatives --install /usr/bin/chromium httptoolkit "$(which true)" 0; \
+                  update-alternatives --install /usr/bin/chromium-browser httptoolkit "$(which chromium)" 0; \
+                  export CHROME_BIN="$(which chromium)"; \
+                  touch ~/.bashrc; \
+                  curl -sLo- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; \
+                  source ~/.bashrc; \
+                  [ "$(dpkg --print-architecture)" = "i386" ] && mkdir -p ~/.nvm/versions/node/v${_NODE_VERSION} && curl -o- https://unofficial-builds.nodejs.org/download/release/v${_NODE_VERSION}/node-v${_NODE_VERSION}-linux-x86.tar.gz | tar zx -C ~/.nvm/versions/node/v${_NODE_VERSION} --strip-components=1 && nvm use $_NODE_VERSION && nvm alias default $_NODE_VERSION || nvm install $_NODE_VERSION; \
+                  git clone  https://github.com/httptoolkit/httptoolkit-server ~/httptoolkit-server; \
+                  cd ~/httptoolkit-server; \
+                  git reset --hard $_HTTPTOOLKIT_LATEST_COMMIT_HASH; \
+                  [ "$(dpkg --print-architecture)" != "arm64" ] && dpkg --print-architecture | grep -q arm && npm install @sentry/cli; \
+                  sed -i "/\('\''Building for Darwin'\''\)/,/\(buildScript, \['\''win32'\''\], { cwd: OUTPUT_DIR, stdio: '\''inherit'\'' }\)/d" ~/httptoolkit-server/pack.ts; \
+                  npm ci; \
+                  sed -i "s/export const ALLOWED_ORIGINS = .*/export const ALLOWED_ORIGINS = false/g" ~/httptoolkit-server/src/constants.ts; \
+                  [ "$(dpkg --print-architecture)" = "i386" ] && sed -i -E "/(download|tarball).*shasums/Id" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
+                  [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s/let nodeBase = \`node-v/if \(arch === '\''ia32'\''\)\n        arch = '\''x86'\'';\n    let nodeBase = \`node-v/g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
+                  [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s#let url = \`https://nodejs.org/dist/v#let url = \`https://unofficial-builds.nodejs.org/download/release/v#g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
+                  npm run build:src; \
+                  npm run build:release; \
+                  mkdir -p ~/httptoolkit-server-release; \
+                  tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-server-release --strip-components=1; \
+                  rm -rf ~/httptoolkit-server; \
+                  mv ~/httptoolkit-server-release ~/httptoolkit-server; \
+                  [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm ci --omit=dev ); :
+    
+              FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
+    
+              COPY --from=builder /root/httptoolkit-server /root/httptoolkit-server
+    
+              WORKDIR /root/httptoolkit-server
+    
+              CMD ["bin/httptoolkit-server", "start"]
+              ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-server -
+    
+              [ "${{ matrix.IMAGE }}" != "electron" ] && docker save httptoolkit-server | gzip --best > dist/httptoolkit-server.tar.gz
+          fi
+          
+          # Build HTTP Toolkit Electron
+          if [ "${{ matrix.IMAGE }}" = "electron" ]; then
+              echo '
+              FROM --platform=linux/'${{ env.PLATFORM }}' httptoolkit-server AS httptoolkit-server
+              
+              FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye AS builder
+              
+              COPY --from=httptoolkit-server /root/httptoolkit-server /root/httptoolkit-server
+              
+              ENV _NODE_VERSION '$_NODE_VERSION'
+    
+              SHELL ["/bin/bash", "-c"]
+    
+              RUN set -eux; \
+                  export DEBIAN_FRONTEND=noninteractive; \
+                  apt update; \
+                  apt install -y dialog apt-utils; \
+                  apt upgrade -y; \
+                  apt install -y --no-install-recommends curl ca-certificates git python3 ruby jq unzip xz-utils moreutils make file cmake g++ libssl-dev; \
+                  gem install fpm; \
+                  export USE_SYSTEM_FPM=true; \
+                  touch ~/.bashrc; \
+                  curl -sLo- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; \
+                  source ~/.bashrc; \
+                  [ "$(dpkg --print-architecture)" = "i386" ] && mkdir -p ~/.nvm/versions/node/v${_NODE_VERSION} && curl -o- https://unofficial-builds.nodejs.org/download/release/v${_NODE_VERSION}/node-v${_NODE_VERSION}-linux-x86.tar.gz | tar zx -C ~/.nvm/versions/node/v${_NODE_VERSION} --strip-components=1 && nvm use $_NODE_VERSION && nvm alias default $_NODE_VERSION || nvm install $_NODE_VERSION; \
+                  git clone --depth 1 https://github.com/httptoolkit/httptoolkit-desktop ~/httptoolkit-desktop; \
+                  mv ~/httptoolkit-server ~/httptoolkit-desktop/httptoolkit-server; \
+                  jq -r ".build.mac.target |= []" ~/httptoolkit-desktop/package.json | jq -r ".build.win.target |= []" | jq -r '\''.build.linux.target |= ["zip"]'\'' | sponge ~/httptoolkit-desktop/package.json; \
+                  cd ~/httptoolkit-desktop; \
+                  npm ci; \
+                  npm run build; \
+                  mkdir -p /opt/httptoolkit; \
+                  unzip -o ~/httptoolkit-desktop/dist/HttpToolkit-linux-*.zip -d /opt/httptoolkit; \
+                  git clone --depth 1 https://github.com/XielQs/httptoolkit-pro-patcher ~/httptoolkit-pro-patcher; \
+                  cd ~/httptoolkit-pro-patcher; \
+                  npm install; \
+                  echo "user@localhost" | npm start; \
+                  rm -rf /opt/httptoolkit/resources/app.asar.bak; \
+                  mv /opt/httptoolkit/httptoolkit /opt/httptoolkit/httptoolkit.bin; \
+                  echo -n "#!" > /opt/httptoolkit/httptoolkit; \
+                  echo -en '\''/bin/sh\n[ $(id -u) -eq 0 ] && exec httptoolkit.bin --no-sandbox "$@" || exec httptoolkit.bin "$@"'\'' >> /opt/httptoolkit/httptoolkit; \
+                  chmod 755 /opt/httptoolkit/httptoolkit
+    
+              FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
+    
+              COPY --from=builder /opt/httptoolkit /opt/httptoolkit
+              
+              ENV PATH /opt/httptoolkit:$PATH
+              
+              ENV DISPLAY :1
+              
+              RUN set -eux; \
+                  export DEBIAN_FRONTEND=noninteractive; \
+                  apt update; \
+                  apt install -y dialog apt-utils; \
+                  apt upgrade -y; \
+                  apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 adduser ca-certificates adb tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
+                  yes "" | adduser --disabled-password httptoolkit
+
+              USER httptoolkit:httptoolkit
+                
+              WORKDIR /home/httptoolkit
+              
+              CMD ["/bin/bash", "-c", "vncserver -kill $DISPLAY &>/dev/null; vncserver -SecurityTypes None,TLSNone -localhost no $DISPLAY; httptoolkit"]
+              ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-electron -
+    
+              docker save httptoolkit-electron | gzip --best > dist/httptoolkit-electron.tar.gz
+          fi
+          
+      - name: Upload Release
+        if: ${{ matrix.ARCH = 'x86' && matrix.IMAGE = 'electron' && false }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: "dist/httptoolkit-${{ matrix.IMAGE }}.tar.gz"
+           asset_name: "httptoolkit-${{ matrix.IMAGE }}-${{ matrix.ARCH }}.tar.gz"
+           tag: "httptoolkit"
+           release_name: "HTTP Toolkit Docker Images"
+           overwrite: true
