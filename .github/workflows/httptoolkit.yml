@@ -171,7 +171,8 @@ jobs:
                   jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \
                   cd ~/httptoolkit-ui; \
                   npm ci; \
-                  UI_VERSION='${{ github.sha }}' REPORT_URI=null npm run build
+                  export UI_VERSION='${{ github.sha }}' REPORT_URI=null; \
+                  npm run build || npm run build
     
               FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_CADDY_VERSION'-alpine
     
@@ -313,7 +314,7 @@ jobs:
           fi
           
       - name: Upload Release
-        continue-on-error: true
+        if: ${{ matrix.ARCH = 'x86' && matrix.IMAGE = 'electron' && 'false' }}
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
