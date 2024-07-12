@@ -171,8 +171,7 @@ jobs:
                   jq '\''.oclif.update.node.targets |= ["linux-x64"]'\'' ~/httptoolkit-ui/package.json | sponge ~/httptoolkit-ui/package.json; \
                   cd ~/httptoolkit-ui; \
                   npm ci; \
-                  export UI_VERSION='${{ github.sha }}' REPORT_URI=null; \
-                  npm run build || npm run build
+                  _RETRY_COUNT=0; while true; do UI_VERSION='${{ github.sha }}' REPORT_URI=null npm run build && break; _RETRY_COUNT="$(($_RETRY_COUNT+1))"; [ $_RETRY_COUNT -gt 4 ] && exit 1; done
     
               FROM --platform=linux/'${{ env.PLATFORM }}' caddy:'$_CADDY_VERSION'-alpine
     
@@ -255,8 +254,6 @@ jobs:
               
               ENV _NODE_VERSION '$_NODE_VERSION'
     
-              SHELL ["/bin/bash", "-c"]
-    
               RUN set -eux; \
                   export DEBIAN_FRONTEND=noninteractive; \
                   apt update; \
@@ -301,6 +298,9 @@ jobs:
                   apt install -y dialog apt-utils; \
                   apt upgrade -y; \
                   apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 adduser ca-certificates adb tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
+                  apt clean; \
+                  apt autoclean; \
+                  apt autoremove; \
                   yes "" | adduser --disabled-password httptoolkit
 
               USER httptoolkit:httptoolkit
