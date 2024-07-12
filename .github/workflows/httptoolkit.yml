@@ -311,8 +311,6 @@ jobs:
                   apt autoclean; \
                   apt autoremove; \
                   yes "" | adduser --disabled-password httptoolkit; \
-                  timeout 30s start-httptoolkit.sh || true; \
-                  vncserver -clean -kill $DISPLAY
 
               USER httptoolkit:httptoolkit
                 
