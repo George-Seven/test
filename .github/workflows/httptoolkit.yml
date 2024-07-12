@@ -309,7 +309,7 @@ jobs:
               CMD ["/bin/bash", "-c", "vncserver -kill $DISPLAY &>/dev/null; vncserver -SecurityTypes None,TLSNone -localhost no $DISPLAY; httptoolkit"]
               ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-electron -
     
-              [ "${{ matrix.TYPE }}" != "electron" ] && docker save httptoolkit-electron | gzip --best > dist/httptoolkit-electron.tar.gz
+              docker save httptoolkit-electron | gzip --best > dist/httptoolkit-electron.tar.gz
           fi
           
       - name: Upload Release
