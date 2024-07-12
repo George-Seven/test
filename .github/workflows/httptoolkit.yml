@@ -29,7 +29,7 @@ jobs:
           fi
 
       - name: Build HTTP Toolkit ${{ matrix.IMAGE == 'ui' && 'UI' || matrix.IMAGE == 'server' && 'Server' || matrix.IMAGE == 'electron' && 'Electron' }} For ${{ matrix.ARCH }}
-        run: |   
+        run: |
           # Support for ARM and ARM64
           if [ "${{ matrix.ARCH }}" = "aarch64" ]; then
               docker run --rm --privileged aptman/qus -s -- -p aarch64
@@ -37,9 +37,12 @@ jobs:
               docker run --rm --privileged aptman/qus -s -- -p arm
           fi
           
+          echo "CREATE_RELEASE=true" >> $GITHUB_ENV
+          
           # Electron doesn't support x86, skip build
           if [ "${{ matrix.ARCH }}" = "x86" ] && [ "${{ matrix.IMAGE }}" = "electron" ]; then
               echo "Electron doesn't support x86"
+              echo "CREATE_RELEASE=false" >> $GITHUB_ENV
               exit 0
           fi
           
@@ -299,7 +302,7 @@ jobs:
                   apt update; \
                   apt install -y dialog apt-utils; \
                   apt upgrade -y; \
-                  apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 adduser ca-certificates adb tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
+                  apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 curl ca-certificates adduser adb tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
                   apt clean; \
                   apt autoclean; \
                   apt autoremove; \
@@ -309,6 +312,10 @@ jobs:
                 
               WORKDIR /home/httptoolkit
               
+              RUN set -eux; \
+                  vncserver -SecurityTypes None,TLSNone -localhost $DISPLAY; \
+                  timeout 30s httptoolkit || true
+              
               CMD ["/bin/bash", "-c", "vncserver -kill $DISPLAY &>/dev/null; vncserver -SecurityTypes None,TLSNone -localhost $DISPLAY; httptoolkit"]
               ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-electron -
     
@@ -316,7 +323,7 @@ jobs:
           fi
           
       - name: Upload Release
-        continue-on-error: true
+        if: ${{ env.CREATE_RELEASE ==  'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
