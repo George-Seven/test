@@ -313,7 +313,7 @@ jobs:
           fi
           
       - name: Upload Release
-        if: ${{ !(${{ matrix.ARCH = 'x86' && matrix.IMAGE = 'electron' }}) }}
+        if: ${{ matrix.ARCH = 'x86' && matrix.IMAGE = 'electron' && false }}
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
