@@ -182,7 +182,7 @@ jobs:
               WORKDIR /site
               ' | docker build --no-cache --force-rm --platform "linux/${{ env.PLATFORM }}" -t httptoolkit-ui -
     
-              docker save httptoolkit-ui | gzip --best > dist/httptoolkit-ui-${{ env.ARCH }}.tar.gz
+              docker save httptoolkit-ui | gzip --best > dist/httptoolkit-ui.tar.gz
           fi
           
           # Build HTTP Toolkit Server
@@ -313,7 +313,7 @@ jobs:
           fi
           
       - name: Upload Release
-        if: ${{ matrix.ARCH != 'x86' && matrix.IMAGE != 'electron' }}
+        if: ${{ !(matrix.ARCH = 'x86' && matrix.IMAGE = 'electron') }}
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
