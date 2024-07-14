@@ -6,6 +6,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Testing
+        run: |
+          sudo rm -rf /var/lib/docker
+          sudo mkdir -p /var/lib/docker
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
