@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Testing
         run: |
+          sudo systemctl stop docker.service
+          sudo systemctl stop docker.socket
           sudo rm -rf /var/lib/docker
           sudo mkdir -p /var/lib/docker
       - name: Maximize build space
@@ -24,6 +26,10 @@ jobs:
         
       - name: Testing
         run: |
+          sudo systemctl daemon-reload
+          sudo systemctl restart docker.service
+          sudo chown -R "$(id -un)" $HOME
+          sudo chgrp -R "$(id -un)" $HOME
           docker run -t --name=testing termux/termux-docker:x86_64 bash -c 'export DEBIAN_FRONTEND=noninteractive TERM=xterm-256color; apt update && yes | apt upgrade -y && apt install x11-repo && pkg install -y $(apt list | grep / | grep -v .-static/ | grep -v -F "[installed]" | sed "s/\/.*//" | grep -Ev "(binutils-is-llvm|emacs-x|gst-plugins-gl-headers|guile18|i3-gaps|joe|libfm-extra|libisoburn|libobjc2|make-guile|mp3cat-go|mpv-x|ncspot-mpris|nodejs|octave-x|openethereum-utils|pinentry-gtk|qemu-system|shaderc|task-spooler|transmission-gtk|vim-python|vim-gtk|vlc-qt|wireshark-qt|dropbear|byacc|libobjc2|pinentry-gtk|python-pyarrow|vulkan-loader-generic|libblocksruntime|pinentry|vulkan-loader-android|libdispatch|deadbeef|libobjc2|swift|sourcekit-lsp)") nodejs-lts'
           
       - name: Setup tmate session
