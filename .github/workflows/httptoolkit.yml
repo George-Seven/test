@@ -224,7 +224,6 @@ jobs:
                   npm ci; \
                   sed -i "s/export const ALLOWED_ORIGINS = .*/export const ALLOWED_ORIGINS = false/g" ~/httptoolkit-server/src/constants.ts; \
                   [ "$(dpkg --print-architecture)" = "i386" ] && sed -i -E "/(download|tarball).*shasums/Id" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
-                  sed -i "s/async update(manifest, channel = '\''stable'\'') {/async update(manifest, channel = '\''stable'\'') {\n        return false;/g" ~/httptoolkit-server/node_modules/@oclif/plugin-update/lib/commands/update.js; \
                   [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s/let nodeBase = \`node-v/if \(arch === '\''ia32'\''\)\n        arch = '\''x86'\'';\n    let nodeBase = \`node-v/g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
                   [ "$(dpkg --print-architecture)" = "i386" ] && sed -i "s#let url = \`https://nodejs.org/dist/v#let url = \`https://unofficial-builds.nodejs.org/download/release/v#g" ~/httptoolkit-server/node_modules/@oclif/dev-cli/lib/tarballs/node.js; \
                   npm run build:src; \
@@ -233,7 +232,8 @@ jobs:
                   tar zxf ~/httptoolkit-server/build/dist/v${_HTTPTOOLKIT_VERSION}/httptoolkit-server-v${_HTTPTOOLKIT_VERSION}-linux-*.tar.gz -C ~/httptoolkit-server-release --strip-components=1; \
                   rm -rf ~/httptoolkit-server; \
                   mv ~/httptoolkit-server-release ~/httptoolkit-server; \
-                  [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm ci --omit=dev ); :
+                  [ "$(dpkg --print-architecture)" = "i386" ] && [ -d ~/httptoolkit-server/node_modules/node-datachannel ] && ( cd ~/httptoolkit-server/node_modules/node-datachannel && rm -rf build && npm ci --omit=dev ); \
+                  sed -i "s/async update(manifest, channel = '\''stable'\'') {/async update(manifest, channel = '\''stable'\'') {\n        return false;/g" ~/httptoolkit-server/node_modules/@oclif/plugin-update/lib/commands/update.js
     
               FROM --platform=linux/'${{ env.PLATFORM }}' debian:bullseye-slim
     
