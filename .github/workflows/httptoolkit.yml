@@ -307,7 +307,7 @@ jobs:
                   apt update; \
                   apt install -y dialog apt-utils; \
                   apt upgrade -y; \
-                  apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 curl ca-certificates adduser adb iproute2 tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
+                  apt install -y --no-install-recommends libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libglib2.0-0 libgbm1 libasound2 libatomic1 curl ca-certificates adduser adb iproute2 tigervnc-standalone-server dbus-x11 openbox obconf xterm; \
                   apt clean; \
                   apt autoclean; \
                   apt autoremove; \
