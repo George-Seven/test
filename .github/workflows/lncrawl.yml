@@ -45,7 +45,7 @@ jobs:
           
           RUN set -eux; \
                   apk --no-cache add chromium chromium-chromedriver py3-pip; \
-                  apk --no-cache add --virtual build-deps g++; \
+                  apk --no-cache add --virtual build-deps g++ linux-headers; \
                   pip3 install -U lightnovel-crawler; \
                   pip cache purge; \
                   apk del build-deps; \
