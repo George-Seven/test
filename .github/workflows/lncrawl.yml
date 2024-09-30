@@ -44,8 +44,8 @@ jobs:
           WORKDIR /root
           
           RUN set -eux; \
-                  apk --no-cache add chromium chromium-chromedriver py3-pip; \
-                  apk --no-cache add --virtual build-deps g++ linux-headers; \
+                  apk --no-cache add chromium chromium-chromedriver py3-pip py3-lxml; \
+                  apk --no-cache add --virtual build-deps g++; \
                   pip3 install -U lightnovel-crawler; \
                   pip cache purge; \
                   apk del build-deps; \
