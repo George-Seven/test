@@ -19,7 +19,7 @@ jobs:
           elif [ "${{ matrix.ARCH }}" = "x86_64" ]; then
             echo "PLATFORM=amd64" >> $GITHUB_ENV
           elif [ "${{ matrix.ARCH }}" = "arm" ]; then
-            echo "PLATFORM=arm/v7" >> $GITHUB_ENV
+            echo "PLATFORM=arm" >> $GITHUB_ENV
           else
             echo "Unsupported architecture"
             exit 1
@@ -46,7 +46,7 @@ jobs:
           RUN set -eux; \
                   apk --no-cache add chromium chromium-chromedriver py3-pip py3-regex py3-packaging py3-grpcio py3-beautifulsoup4 py3-requests py3-colorama py3-tqdm py3-pillow py3-lxml py3-html5lib py3-pycryptodome py3-readability-lxml; \
                   echo CHROMIUM_FLAGS=\"--no-sandbox\" > /etc/chromium/no-sandbox.conf; \
-                  apk --no-cache add --virtual build-deps g++ python3-dev linux-headers; \
+                  apk --no-cache add --virtual build-deps g++ python3-dev linux-headers wget; \
                   pip3 install -U lightnovel-crawler; \
                   pip cache purge; \
                   apk del build-deps; \
@@ -58,6 +58,7 @@ jobs:
                   for _URL in $_URLS; do \
                       echo "$_MTL_TEMPLATE" | sed "s/_NEWLINE_/\n/g" | sed "s/_URL/$_URL/" > "$_SOURCE_DIR/mtl/${_URL}.py"; \
                   done; \
+                  wget -O- "https://github.com/sorenisanerd/gotty/releases/download/v1.5.0/gotty_v1.5.0_linux_arm64.tar.gz" | tar zx -C /usr/bin; \
                   rm -rf /tmp/* /tmp/.* 2>/dev/null || true
           
           CMD ["ash"]
