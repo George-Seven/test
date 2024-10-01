@@ -44,7 +44,7 @@ jobs:
           WORKDIR /root
           
           RUN set -eux; \
-                  apk --no-cache add chromium chromium-chromedriver py3-pip py3-regex py3-packaging py3-grpcio py3-beautifulsoup4 py3-requests py3-colorama py3-tqdm py3-pillow py3-lxml py3-html5lib py3-pycryptodome py3-readability-lxml; \
+                  apk --no-cache add chromium chromium-chromedriver tmux py3-pip py3-regex py3-packaging py3-grpcio py3-beautifulsoup4 py3-requests py3-colorama py3-tqdm py3-pillow py3-lxml py3-html5lib py3-pycryptodome py3-readability-lxml; \
                   echo CHROMIUM_FLAGS=\"--no-sandbox\" > /etc/chromium/no-sandbox.conf; \
                   apk --no-cache add --virtual build-deps g++ python3-dev linux-headers wget; \
                   pip3 install -U lightnovel-crawler; \
