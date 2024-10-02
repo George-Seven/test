@@ -24,14 +24,7 @@ jobs:
           fi
 
       - name: Build Calibre AppImage
-        run: |
-          # Support for ARM64
-          if [[ "${{ matrix.ARCH }}" == "aarch64" ]]; then
-              docker run --rm --privileged aptman/qus -s -- -p aarch64
-          fi
-
-          # Build Calibe AppImage
-          
+        run: |      
           sudo apt-get install -y fuse libfuse2
           
           version=7.19.0
@@ -76,7 +69,7 @@ jobs:
 
           mkdir -p build/calibre.AppDir/usr/bin/
           cd build/calibre.AppDir/usr/bin/
-          curl -o - https://download.calibre-ebook.com/$version/calibre-$version-"${{ matrix.PLATFORM }}".txz | tar -xJf -
+          wget -O- https://download.calibre-ebook.com/$version/calibre-$version-"${{ matrix.PLATFORM }}".txz | tar -xJ
 
           pwd
           ls -lah
