@@ -69,7 +69,8 @@ jobs:
 
           mkdir -p build/calibre.AppDir/usr/bin/
           cd build/calibre.AppDir/usr/bin/
-          wget -O- https://download.calibre-ebook.com/$version/calibre-$version-"${{ matrix.PLATFORM }}".txz | tar -xJ
+          echo "curl -o - https://download.calibre-ebook.com/$version/calibre-$version-\"${{ matrix.PLATFORM }}\".txz | tar -xJf -"
+          curl -o - https://download.calibre-ebook.com/$version/calibre-$version-"${{ matrix.PLATFORM }}".txz | tar -xJf -
 
           pwd
           ls -lah
