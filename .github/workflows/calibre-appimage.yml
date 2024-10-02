@@ -78,7 +78,6 @@ jobs:
           ls -lah
 
           cp build/calibre.AppDir/usr/bin/resources/content-server/calibre.png build/calibre.AppDir
-          cp README.md build/calibre.AppDir
 
       - name: Get appimagetool
         run: |
