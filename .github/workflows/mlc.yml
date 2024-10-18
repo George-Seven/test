@@ -1,0 +1,56 @@
+name: Build MLC
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Testing
+        run: |
+          sudo systemctl stop docker.service
+          sudo systemctl stop docker.socket
+          sudo rm -rf /var/lib/docker
+          sudo mkdir -p /var/lib/docker
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 30720
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'false'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          build-mount-path: '/home/runner/work/test/test'
+        
+      - name: Build MLC
+        run: |
+          sudo systemctl daemon-reload
+          sudo systemctl restart docker.service
+          
+          export TVM_NDK_CC="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang" TVM_SOURCE_DIR="$(pwd)/mlc-llm/3rdparty/tvm" MLC_LLM_SOURCE_DIR="$(pwd)/mlc-llm" JAVA_HOME="/usr/lib/jvm/temurin-17-jdk-amd64" 
+
+          sudo apt install -y jq moreutils
+          
+          git clone --recursive --depth 1 https://github.com/mlc-ai/mlc-llm
+          
+          python -m pip install --pre -U -f https://mlc.ai/wheels mlc-llm-nightly-cpu mlc-ai-nightly-cpu
+          
+          cd mlc-llm/android/MLCChat
+          
+          jq '.model_list[] |= . + {"bundle_weight": true}' mlc-package-config.json | sponge mlc-package-config.json
+          
+          mlc_llm package
+          
+          ./gradlew assembleDebug
+          
+          zip -r9 mlc.zip dist/bundle app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: mlc.zip
+           tag: "mlc"
+           release_name: "MLC"
+           overwrite: true
