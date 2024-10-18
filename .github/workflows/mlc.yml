@@ -6,13 +6,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Testing
+      - name: Maximize build space 1
         run: |
           sudo systemctl stop docker.service
           sudo systemctl stop docker.socket
           sudo rm -rf /var/lib/docker
           sudo mkdir -p /var/lib/docker
-      - name: Maximize build space
+      - name: Maximize build space 2
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 30720
