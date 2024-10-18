@@ -45,12 +45,15 @@ jobs:
           ./gradlew assembleDebug
           
           zip -r9 mlc.zip dist/bundle app/build/outputs/apk/debug/app-debug.apk
+          
+          split -b 1900M mlc.zip mlc_part_
 
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
            repo_token: ${{ secrets.GITHUB_TOKEN }}
-           file: mlc.zip
+           file: mlc_part_*
+           file_glob: true
            tag: "mlc"
            release_name: "MLC"
            overwrite: true
