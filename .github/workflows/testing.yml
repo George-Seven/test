@@ -26,6 +26,7 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
           #build-mount-path: '/var/lib/docker'
+          build-mount-path: '/home/runner/work/test/test'
         
       - name: Testing
         run: |
