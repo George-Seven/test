@@ -49,7 +49,6 @@ jobs:
           export CC="${CLANG_BINARY}"; \
           export CXX="${CLANGXX_BINARY}"; \
           [ "'${{ matrix.ARCH }}'" = "amd64" ] && export LINKER=lld AR=/usr/bin/llvm-ar-"$LLVMVER" RANLIB=/usr/bin/llvm-ranlib-"$LLVMVER" && export CFLAGS="$CFLAGS -fuse-ld=${LINKER}" && EXTRA_DFLAGS="-DCMAKE_AR=$AR -DCMAKE_RANLIB=$RANLIB"; \
-          env; \
           cmake ../rpcs3/ \
           -DUSE_NATIVE_INSTRUCTIONS=OFF \
           -DUSE_PRECOMPILED_HEADERS=OFF \
@@ -67,7 +66,20 @@ jobs:
           make \
           '
           
-          sudo chgrp -R "$(id -u):$(id -g)" "$BUILD_DIR"
+          sudo chown -R "$(id -u):$(id -u)" "$BUILD_DIR"
+          sudo chgrp -R "$(id -g)" "$BUILD_DIR"
+          zip -r9 rpcs3.zip "$BUILD_DIR"
+          du -h rpcs3.zip
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: "rpcs3.zip"
+           asset_name: "rpcs3-${{ matrix.ARCH }}.zip"
+           tag: "rpcs3"
+           release_name: "RPCS3"
+           overwrite: true
+
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v3
