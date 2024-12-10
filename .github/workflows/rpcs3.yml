@@ -14,6 +14,16 @@ jobs:
     steps:
       - name: Build RPCS3
         run: |
+          # Set RPCS3 CI image
+          if [ "${{ matrix.ARCH }}" = "arm64" ]; then
+            RPCS3_CI_IMAGE="rpcs3/rpcs3-ci-focal-aarch64"
+          elif [ "${{ matrix.ARCH }}" = "amd64" ]; then
+            RPCS3_CI_IMAGE="rpcs3/rpcs3-ci-focal"
+          else
+            echo "Unsupported architecture"
+            exit 1
+          fi
+          
           # Support for ARM64
           if [[ "${{ matrix.ARCH }}" == "arm64" ]]; then
               docker run --rm --privileged aptman/qus -s -- -p aarch64
@@ -26,26 +36,40 @@ jobs:
           VULKAN_SDK_VERSION="1.3.268"
           mkdir -p "$BUILD_DIR"
           
-          docker run -t --platform "linux/${{ matrix.ARCH }}" -v "$(pwd)/$BUILD_DIR":"/root/$BUILD_DIR" carlonluca/qt-dev:"$QT_VERSION" ' \
+          RPCS3_CI_IMAGE_VERSION=$(curl -L --fail "https://hub.docker.com/v2/repositories/$RPCS3_CI_IMAGE/tags/?page_size=1000" | \
+          jq '.results | .[] | .name' -r | \
+          sed 's/latest//' | \
+          sort --version-sort | \
+          tail -n 1 | \
+          sed 's/\.$/.0/')
+          
+          docker run -t -v "$(pwd)/$BUILD_DIR":"/root/$BUILD_DIR" "$RPCS3_CI_IMAGE:$RPCS3_CI_IMAGE_VERSION" bash -c ' \
           cd /root; \
-          apt update; \
-          yes | apt upgrade -y; \
-          yee | apt install -y dialog sudo apt-utils adduser; \
-          yes | DEBIAN_FRONTEND=noninteractive apt install -y git wget curl software-properties-common cmake build-essential libasound2-dev libpulse-dev libopenal-dev libglew-dev zlib1g-dev libedit-dev libvulkan-dev libudev-dev git libevdev-dev libsdl2-2.0-0 libsdl2-dev libjack-dev libsndio-dev; \
-          . /etc/os-release; \
-          wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -; \
-          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-'$VULKAN_SDK_VERSION'-$UBUNTU_CODENAME.list https://packages.lunarg.com/vulkan/'$VULKAN_SDK_VERSION'/lunarg-vulkan-'$VULKAN_SDK_VERSION'-$UBUNTU_CODENAME.list; \
-          sudo apt update; \
-          sudo apt install -y vulkan-sdk; \
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; \
-          sudo apt update; \
-          sudo apt install -y gcc-'$GCCVER' g++-'$GCCVER'; \
-          git clone --depth 1 https://github.com/RPCS3/rpcs3; \
-          cd rpcs3; \
-          git submodule update --init; \
+          git submodule update --init $(awk '\''/path/ && !/llvm/ && !/opencv/ { print $3 }'\'' .gitmodules); \
           cd .. && mkdir -p '$BUILD_DIR' && cd '$BUILD_DIR'; \
-          [ "'${{ matrix.ARCH }}'" = "arm64" ] && USE_NATIVE_INSTRUCTIONS=ON || USE_NATIVE_INSTRUCTIONS=OFF; \
-          CXX=g++-'$GCCVER' CC=gcc-'$GCCVER' cmake  -DBUILD_LLVM=ON -DUSE_SYSTEM_CURL=OFF -DUSE_NATIVE_INSTRUCTIONS=$USE_NATIVE_INSTRUCTIONS ../rpcs3/ && make \
+          export CC="${CLANG_BINARY}"; \
+          export CXX="${CLANGXX_BINARY}"; \
+          export LINKER=lld; \
+          export AR=/usr/bin/llvm-ar-"$LLVMVER"; \
+          export RANLIB=/usr/bin/llvm-ranlib-"$LLVMVER"; \
+          export CFLAGS="$CFLAGS -fuse-ld=${LINKER}"; \
+          cmake ../rpcs3/ \
+          -DUSE_NATIVE_INSTRUCTIONS=OFF \
+          -DUSE_PRECOMPILED_HEADERS=OFF \
+          -DCMAKE_C_FLAGS="$CFLAGS" \
+          -DCMAKE_CXX_FLAGS="$CFLAGS" \
+          -DCMAKE_AR="$AR" \
+          -DCMAKE_RANLIB="$RANLIB" \
+          -DUSE_SYSTEM_CURL=ON \
+          -DUSE_SDL=ON \
+          -DUSE_SYSTEM_SDL=ON \
+          -DUSE_SYSTEM_FFMPEG=OFF \
+          -DUSE_SYSTEM_OPENCV=ON \
+          -DUSE_DISCORD_RPC=ON \
+          -DOpenGL_GL_PREFERENCE=LEGACY \
+          -DLLVM_DIR=/opt/llvm/lib/cmake/llvm \
+          -DSTATIC_LINK_LLVM=ON; \
+          make \
           '
           
           sudo chmod -R "$(id -u):$(id -g)" "$BUILD_DIR"
