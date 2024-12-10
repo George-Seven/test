@@ -27,7 +27,6 @@ jobs:
           mkdir -p "$BUILD_DIR"
           
           docker run -t --platform "linux/${{ matrix.ARCH }}" -v "$(pwd)/$BUILD_DIR":"/root/$BUILD_DIR" carlonluca/qt-dev:"$QT_VERSION" ' \
-          set -eux; \
           cd /root; \
           apt update; \
           yes | apt upgrade -y; \
