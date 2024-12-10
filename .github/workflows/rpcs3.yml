@@ -48,17 +48,13 @@ jobs:
           cd .. && mkdir -p '$BUILD_DIR' && cd '$BUILD_DIR'; \
           export CC="${CLANG_BINARY}"; \
           export CXX="${CLANGXX_BINARY}"; \
-          export LINKER=lld; \
-          export AR=/usr/bin/llvm-ar-"$LLVMVER"; \
-          export RANLIB=/usr/bin/llvm-ranlib-"$LLVMVER"; \
-          export CFLAGS="$CFLAGS -fuse-ld=${LINKER}"; \
+          [ "'${{ matrix.ARCH }}'" = "amd64" ] && export LINKER=lld AR=/usr/bin/llvm-ar-"$LLVMVER" RANLIB=/usr/bin/llvm-ranlib-"$LLVMVER" && export CFLAGS="$CFLAGS -fuse-ld=${LINKER}" && EXTRA_DFLAGS="-DCMAKE_AR=$AR -DCMAKE_RANLIB=$RANLIB"; \
+          env; \
           cmake ../rpcs3/ \
           -DUSE_NATIVE_INSTRUCTIONS=OFF \
           -DUSE_PRECOMPILED_HEADERS=OFF \
           -DCMAKE_C_FLAGS="$CFLAGS" \
           -DCMAKE_CXX_FLAGS="$CFLAGS" \
-          -DCMAKE_AR="$AR" \
-          -DCMAKE_RANLIB="$RANLIB" \
           -DUSE_SYSTEM_CURL=ON \
           -DUSE_SDL=ON \
           -DUSE_SYSTEM_SDL=ON \
@@ -67,7 +63,7 @@ jobs:
           -DUSE_DISCORD_RPC=ON \
           -DOpenGL_GL_PREFERENCE=LEGACY \
           -DLLVM_DIR=/opt/llvm/lib/cmake/llvm \
-          -DSTATIC_LINK_LLVM=ON; \
+          -DSTATIC_LINK_LLVM=ON $EXTRA_DFLAGS; \
           make \
           '
           
