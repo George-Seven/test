@@ -67,7 +67,7 @@ jobs:
           make \
           '
           
-          sudo chmod -R "$(id -u):$(id -g)" "$BUILD_DIR"
+          sudo chgrp -R "$(id -u):$(id -g)" "$BUILD_DIR"
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
