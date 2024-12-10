@@ -1,0 +1,53 @@
+name: Build RPCS3
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        ARCH: [arm64, amd64]
+      fail-fast: false
+    steps:
+      - name: Build RPCS3
+        run: |
+          # Support for ARM64
+          if [[ "${{ matrix.ARCH }}" == "arm64" ]]; then
+              docker run --rm --privileged aptman/qus -s -- -p aarch64
+          fi
+
+          # Build RPCS3
+          BUILD_DIR="rpcs3_build"
+          QT_VERSION="6.8"
+          GCCVER="13"
+          VULKAN_SDK_VERSION="1.3.268"
+          mkdir -p "$BUILD_DIR"
+          
+          docker run -t -v "$(pwd)/$BUILD_DIR":"/root/$BUILD_DIR" --platform  carlonluca/qt-dev:"$QT_VERSION" ' \
+          set -eux; \
+          cd /root; \
+          apt update; \
+          yes | apt upgrade -y; \
+          yee | apt install -y dialog sudo apt-utils adduser; \
+          yes | DEBIAN_FRONTEND=noninteractive apt install -y git wget curl software-properties-common cmake build-essential libasound2-dev libpulse-dev libopenal-dev libglew-dev zlib1g-dev libedit-dev libvulkan-dev libudev-dev git libevdev-dev libsdl2-2.0-0 libsdl2-dev libjack-dev libsndio-dev; \
+          . /etc/os-release; \
+          wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -; \
+          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-'$VULKAN_SDK_VERSION'-$UBUNTU_CODENAME.list https://packages.lunarg.com/vulkan/'$VULKAN_SDK_VERSION'/lunarg-vulkan-'$VULKAN_SDK_VERSION'-$UBUNTU_CODENAME.list; \
+          sudo apt update; \
+          sudo apt install -y vulkan-sdk; \
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; \
+          sudo apt update; \
+          sudo apt install -y gcc-'$GCCVER' g++-'$GCCVER'; \
+          git clone --depth 1 https://github.com/RPCS3/rpcs3; \
+          cd rpcs3; \
+          git submodule update --init; \
+          cd .. && mkdir -p '$BUILD_DIR' && cd '$BUILD_DIR'; \
+          CXX=g++-'$GCCVER' CC=gcc-'$GCCVER' cmake  -DBUILD_LLVM=ON -DUSE_SYSTEM_CURL=OFF ../rpcs3/ && make \
+          '
+          sudo chmod -R "$(id -u):$(id -g)" "$BUILD_DIR"
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
