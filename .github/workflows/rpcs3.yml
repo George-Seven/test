@@ -26,7 +26,7 @@ jobs:
           VULKAN_SDK_VERSION="1.3.268"
           mkdir -p "$BUILD_DIR"
           
-          docker run -t -v "$(pwd)/$BUILD_DIR":"/root/$BUILD_DIR" --platform  carlonluca/qt-dev:"$QT_VERSION" ' \
+          docker run -t --platform "linux/${{ matrix.ARCH }}" -v "$(pwd)/$BUILD_DIR":"/root/$BUILD_DIR" carlonluca/qt-dev:"$QT_VERSION" ' \
           set -eux; \
           cd /root; \
           apt update; \
@@ -45,8 +45,10 @@ jobs:
           cd rpcs3; \
           git submodule update --init; \
           cd .. && mkdir -p '$BUILD_DIR' && cd '$BUILD_DIR'; \
-          CXX=g++-'$GCCVER' CC=gcc-'$GCCVER' cmake  -DBUILD_LLVM=ON -DUSE_SYSTEM_CURL=OFF ../rpcs3/ && make \
+          [ "'${{ matrix.ARCH }}'" = "arm64" ] && USE_NATIVE_INSTRUCTIONS=ON || USE_NATIVE_INSTRUCTIONS=OFF; \
+          CXX=g++-'$GCCVER' CC=gcc-'$GCCVER' cmake  -DBUILD_LLVM=ON -DUSE_SYSTEM_CURL=OFF -DUSE_NATIVE_INSTRUCTIONS=$USE_NATIVE_INSTRUCTIONS ../rpcs3/ && make \
           '
+          
           sudo chmod -R "$(id -u):$(id -g)" "$BUILD_DIR"
 
       - name: Setup tmate session
