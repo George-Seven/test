@@ -14,6 +14,11 @@ jobs:
     steps:
       - name: Generate RPCS3 RootFS Tarball
         run: |
+          # Support for ARM64
+          if [[ "${{ matrix.ARCH }}" == "arm64" ]]; then
+              docker run --rm --privileged aptman/qus -s -- -p aarch64
+          fi
+          
           docker run --name rpcs3 --pull always -t --env DEBIAN_FRONTEND="noninteractive" --platform "linux/${{ matrix.ARCH }}" ubuntu:noble bash -c ' \
           cd /root && \
           apt update -y && \
