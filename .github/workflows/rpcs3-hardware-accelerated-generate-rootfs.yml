@@ -47,7 +47,7 @@ jobs:
           echo "export LC_ALL=en_US.UTF-8 >>/root/.config/openbox/environment && \
           echo -n "/root/squashfs-root/AppRun" >/root/.config/openbox/autostart && \
           echo -en "#!/usr/bin/bash\nexec dbus-launch --sh-syntax --exit-with-session openbox-session" >/usr/local/bin/rpcs3 && \
-          chmod 755 /usr/local/bin/rpcs3 \ 
+          chmod 755 /usr/local/bin/rpcs3 \
           '
           
           docker export -o rpcs3.tar rpcs3
