@@ -44,7 +44,7 @@ jobs:
           echo "[ -z \"\$DISPLAY\" ] && export DISPLAY=:1" >/root/.config/openbox/environment && \
           echo "[ -z \"\$PULSE_SERVER\" ] && export PULSE_SERVER=127.0.0.1" >>/root/.config/openbox/environment && \
           echo "[ \"\$HW_ACCELERATION\" -ne 0 ] && export GALLIUM_DRIVER=zink MESA_LOADER_DRIVER_OVERRIDE=zink TU_DEBUG=noconform vblank_mode=0 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json" >>/root/.config/openbox/environment && \
-          echo "export LC_ALL=en_US.UTF-8 >>/root/.config/openbox/environment && \
+          echo "export LC_ALL=en_US.UTF-8" >>/root/.config/openbox/environment && \
           echo -n "/root/squashfs-root/AppRun" >/root/.config/openbox/autostart && \
           echo -en "#!/usr/bin/bash\nexec dbus-launch --sh-syntax --exit-with-session openbox-session" >/usr/local/bin/rpcs3 && \
           chmod 755 /usr/local/bin/rpcs3 \
