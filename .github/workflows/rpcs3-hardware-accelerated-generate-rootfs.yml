@@ -9,7 +9,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        ARCH: [arm64, amd64]
+        ARCH: [arm64]
       fail-fast: false
     steps:
       - name: Generate RPCS3 RootFS Tarball
