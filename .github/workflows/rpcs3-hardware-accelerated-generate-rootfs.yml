@@ -23,7 +23,7 @@ jobs:
           cd /root && \
           apt update -y && \
           apt install -y --no-install-recommends apt-utils dialog sudo adduser && \
-          apt install -y --no-install-recommends openbox obconf python3-xdg menu dbus-x11 xterm thunar xdg-utils curl wget ca-certificates jq nano gpg software-properties-common locales libgl1 libopengl0 libegl1 && \
+          apt install -y --no-install-recommends openbox obconf python3-xdg menu dbus-x11 xterm xfonts-base thunar xdg-utils curl wget ca-certificates jq nano gpg software-properties-common locales libgl1 libopengl0 libegl1 && \
           apt install -y --no-install-recommends libasound2t64 || apt install -y --no-install-recommends libasound2 && \
           sed -i -E "s/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g" /etc/locale.gen && \
           mkdir -p /root/.config/gtk-3.0 && \
@@ -41,13 +41,17 @@ jobs:
           ./rpcs3.AppImage --appimage-extract && \
           rm -rf rpcs3.AppImage && \
           mkdir -p /root/.config/openbox && \
-          echo "[ -z \"\$DISPLAY\" ] && export DISPLAY=:1" >/root/.config/openbox/environment && \
-          echo "[ -z \"\$PULSE_SERVER\" ] && export PULSE_SERVER=127.0.0.1" >>/root/.config/openbox/environment && \
-          echo "[ \"\$HW_ACCELERATION\" -ne 0 ] && export GALLIUM_DRIVER=zink MESA_LOADER_DRIVER_OVERRIDE=zink TU_DEBUG=noconform vblank_mode=0 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json" >>/root/.config/openbox/environment && \
-          echo "export LC_ALL=en_US.UTF-8" >>/root/.config/openbox/environment && \
-          echo -n "/root/squashfs-root/AppRun" >/root/.config/openbox/autostart && \
-          echo -en "#!/usr/bin/bash\nexec dbus-launch --sh-syntax --exit-with-session openbox-session" >/usr/local/bin/rpcs3 && \
-          chmod 755 /usr/local/bin/rpcs3 \
+          echo "/root/squashfs-root/AppRun" >/root/.config/openbox/autostart && \
+          echo "openbox --exit >/dev/null 2>&1; kill -s 2 \$(ps -e -o pid,args | grep -Eo \"^(\s|\t)*[0-9]+(\s|\t)*dbus-launch --sh-syntax --exit-with-session openbox-session\" | grep -v grep | grep -Eo \"^(\s|\t)*[0-9]+\") >/dev/null 2>&1" >>/root/.config/openbox/autostart && \
+          echo "export LC_ALL=en_US.UTF-8" >/root/.config/openbox/environment && \
+          echo -n "#!" >/usr/local/bin/start-rpcs3.sh && \
+          echo "/usr/bin/bash" >>/usr/local/bin/start-rpcs3.sh && \
+          echo "export HOME=/root LC_ALL=en_US.UTF-8" >>/usr/local/bin/start-rpcs3.sh && \
+          echo "[ -z \"\$DISPLAY\" ] && export DISPLAY=:1" >>/usr/local/bin/start-rpcs3.sh && \
+          echo "[ -z \"\$PULSE_SERVER\" ] && export PULSE_SERVER=127.0.0.1" >>/usr/local/bin/start-rpcs3.sh && \
+          echo "[ \"\$HW_ACCELERATION\" != "0" ] && export GALLIUM_DRIVER=zink MESA_LOADER_DRIVER_OVERRIDE=zink TU_DEBUG=noconform vblank_mode=0 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/freedreno_icd.aarch64.json" >>/usr/local/bin/start-rpcs3.sh && \
+          echo "openbox --exit >/dev/null 2>&1; kill -s 2 \$(ps -e -o pid,args | grep -Eo \"^(\s|\t)*[0-9]+(\s|\t)*dbus-launch --sh-syntax --exit-with-session openbox-session\" | grep -v grep | grep -Eo \"^(\s|\t)*[0-9]+\") >/dev/null 2>&1; dbus-launch --sh-syntax --exit-with-session openbox-session" >>/usr/local/bin/start-rpcs3.sh && \
+          chmod 755 /usr/local/bin/start-rpcs3.sh \
           '
           
           docker export -o rpcs3.tar rpcs3
