@@ -35,8 +35,8 @@ jobs:
           apt dist-upgrade -y && \
           apt install -y --no-install-recommends mesa-vulkan-drivers && \
           apt autoremove -y && \
-          wget -O rpcs3.AppImage "$(curl -s https://api.github.com/repos/RPCS3/rpcs3-binaries-linux-arm64/releases/latest | jq -r ".assets[0].browser_download_url")" && \
-          { uname -m | grep -E "(aarch|arm)" | grep -q 64 && dd if=/dev/zero bs=1 count=3 seek=8 conv=notrunc of=rpcs3.AppImage; } || true && \
+          { uname -m | grep -E "(aarch|arm)" | grep -q 64 && wget -O rpcs3.AppImage "$(curl -s https://api.github.com/repos/RPCS3/rpcs3-binaries-linux-arm64/releases/latest | jq -r ".assets[0].browser_download_url")"; } || wget -O rpcs3.AppImage "$(curl -s https://api.github.com/repos/RPCS3/rpcs3-binaries-linux/releases/latest | jq -r ".assets[0].browser_download_url")" && \
+          dd if=/dev/zero bs=1 count=3 seek=8 conv=notrunc of=rpcs3.AppImage && \
           chmod 755 rpcs3.AppImage && \
           ./rpcs3.AppImage --appimage-extract && \
           rm -rf rpcs3.AppImage && \
