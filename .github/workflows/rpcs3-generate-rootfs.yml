@@ -1,0 +1,58 @@
+name: Generate RPCS3 RootFS Tarball
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        ARCH: [arm64]
+      fail-fast: false
+    steps:
+      - name: Generate RPCS3 RootFS Tarball
+        run: |
+          docker run --name rpcs3 --pull always -t --env DEBIAN_FRONTEND="noninteractive" --platform "linux/${{ matrix.ARCH }}" ubuntu:noble bash -c ' \
+          cd /root && \
+          apt update -y && \
+          apt install -y --no-install-recommends apt-utils dialog sudo adduser && \
+          apt install -y --no-install-recommends openbox obconf python3-xdg menu dbus-x11 xterm thunar xdg-utils curl wget ca-certificates jq nano gpg software-properties-common locales libgl1 libopengl0 libegl1 && \
+          apt install -y --no-install-recommends libasound2t64 || apt install -y --no-install-recommends libasound2 && \
+          sed -i -E "s/#[[:space:]]?(en_US.UTF-8[[:space:]]+UTF-8)/\1/g" /etc/locale.gen && \
+          mkdir -p /root/.config/gtk-3.0 && \
+          echo -n ".thunar .warning { font-size: 0pt; margin: -30px; }" >/root/.config/gtk-3.0/gtk.css && \
+          ln -nsf /usr/share/zoneinfo/Asia/Kolkata /etc/localtime && \
+          dpkg-reconfigure tzdata locales && \
+          add-apt-repository -y ppa:mastag/mesa-turnip-kgsl && \
+          apt update && \
+          apt dist-upgrade -y && \
+          apt install -y --no-install-recommends mesa-vulkan-drivers && \
+          apt autoremove -y && \
+          wget -O rpcs3.AppImage "$(curl -s https://api.github.com/repos/RPCS3/rpcs3-binaries-linux-arm64/releases/latest | jq -r ".assets[0].browser_download_url")" && \
+          chmod 755 rpcs3.AppImage && \
+          ./rpcs3.AppImage --appimage-extract && \
+          rm -rf rpcs3.AppImage && \
+          mkdir -p /root/.config/openbox && \
+          echo -n "LC_ALL=en_US.UTF-8 /root/squashfs-root/AppRun" >/root/.config/openbox/autostart \
+          '
+          
+          docker export -o rpcs3.tar rpcs3
+          mkdir -p etc
+          echo "nameserver 8.8.8.8" | sudo tee etc/resolv.conf >/dev/null
+          echo "127.0.0.1 localhost" | sudo tee etc/hosts >/dev/null
+          echo "::1 localhost" | sudo tee -a etc/hosts >/dev/null
+          tar -rf rpcs3.tar etc/resolv.conf etc/hosts
+          tar -f rpcs3.tar --delete .dockerenv
+          gzip --best rpcs3.tar
+
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+           file: "rpcs3.tar.gz"
+           asset_name: "rpcs3-rootfs-${{ matrix.ARCH }}.tar.gz"
+           tag: "rpcs3-hardware-accelerated"
+           release_name: "RPCS3 RootFS Tarball With Hardware Acceleration"
+           overwrite: true
