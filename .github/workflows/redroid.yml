@@ -1,0 +1,44 @@
+name: redroid
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Kernel Modules
+        run: |
+          sudo apt install -y linux-modules-extra-$(uname -r)
+          sudo mkdir -p /dev/binderfs
+          sudo modprobe binder_linux
+          sudo mount -t binder binder /dev/binderfs
+
+          for i in binder hwbinder vndbinder; do
+            sudo ln -nsf "/dev/binderfs/${i}" "/dev/${i}"
+          done
+
+          git clone --depth 1 https://github.com/choff/anbox-modules
+          cd anbox-modules/ashmem
+          make -j $(nproc --all)
+          sudo insmod ashmem_linux.ko
+          
+      - name: Setup Redroid
+        run: |
+          sudo apt update -y
+          docker run -itd --rm --privileged \
+              --pull always \
+              -v ~/data:/data \
+              -p 5555:5555 \
+              redroid/redroid:11.0.0-latest \
+              androidboot.redroid_width=1080 \
+              androidboot.redroid_height=1920 \
+              androidboot.redroid_dpi=480
+          
+          sudo snap install ngrok --devmode
+          ngrok config add-authtoken "${{ secrets.NGROK_AUTHTOKEN }}"
+          ( ngrok tcp 5555 &>/dev/null & )
+          exit 0
+          while true; do ssh -p 443 -R0:localhost:5555 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@a.pinggy.io . 2>/dev/null | while read -r line; do if echo "${line}" | grep -q "tcp://"; then while true; do echo "${line}" | sed 's/.*tcp:\/\///'; sleep 5; done; fi; done; done
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
