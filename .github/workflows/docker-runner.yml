@@ -12,7 +12,12 @@ jobs:
     steps:
       - name: Docker Runner
         run: |
-          sudo npm install -g localtunnel
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://archive.heckel.io/apt/pubkey.txt | sudo gpg --dearmor -o /etc/apt/keyrings/archive.heckel.io.gpg
+          sudo apt install -y apt-transport-https
+          sudo sh -c "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/archive.heckel.io.gpg] https://archive.heckel.io/apt debian main' > /etc/apt/sources.list.d/archive.heckel.io.list"  
+          sudo apt update
+          sudo apt install -y ntfy
           sudo sed -i -E 's|ExecStart=/usr/bin/dockerd.*|ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375|g' /lib/systemd/system/docker.service
           sudo systemctl daemon-reload
           sudo systemctl restart docker
@@ -31,9 +36,8 @@ jobs:
           tcp_url=$(grep -o 'tcp://.*' /tmp/ssh_output.txt) && \
           echo "$tcp_url"
           }
-          
           while true; do
               echo "Starting tcp tunnel..."
-              ntfy publish "$TUNNEL_SECRET" "$(get_tcp_url)"
+              ntfy publish "${{ secrets.TUNNEL_SECRET }}" "$(get_tcp_url)" >/dev/null 2>&1
               sleep 50m
           done
