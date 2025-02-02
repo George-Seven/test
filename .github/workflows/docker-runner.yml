@@ -16,9 +16,24 @@ jobs:
           sudo sed -i -E 's|ExecStart=/usr/bin/dockerd.*|ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375|g' /lib/systemd/system/docker.service
           sudo systemctl daemon-reload
           sudo systemctl restart docker
+          get_tcp_url(){
+          unset tcp_url && \
+          tcp_url=$(expect -c '
+          log_user 0
+          spawn ssh -T -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R 0.0.0.0:2375:localhost:2375 tcp@a.pinggy.io
+          expect -re {tcp://.*} {
+              set result $expect_out(0,string)
+              puts $result
+          }
+          exec sleep infinity
+          ' | tee /tmp/ssh_output.txt) & \
+          sleep 2 && \
+          tcp_url=$(grep -o 'tcp://.*' /tmp/ssh_output.txt) && \
+          echo "$tcp_url"
+          }
+          
           while true; do
-              echo "Starting localtunnel..."
-              $(which lt) -p 2375 -s "docker${{ secrets.LT_AUTHTOKEN }}" 2>/dev/null >/dev/null
-              echo "Stopping localtunnel..."
-              pkill -9 -f $(which lt)
+              echo "Starting tcp tunnel..."
+              ntfy publish "$TUNNEL_SECRET" "$(get_tcp_url)"
+              sleep 50m
           done
