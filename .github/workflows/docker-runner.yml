@@ -1,6 +1,8 @@
 name: Docker Runner
 on:
   workflow_dispatch:
+concurrency:
+  group: docker-runner
 
 jobs:
   build:
@@ -12,9 +14,12 @@ jobs:
           sudo sed -i -E 's|ExecStart=/usr/bin/dockerd.*|ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375|g' /lib/systemd/system/docker.service
           sudo systemctl daemon-reload
           sudo systemctl restart docker
-          while true; do
+          #while true; do
               echo "Starting localtunnel..."
-              $(which lt) -p 2375 -s "docker${{ secrets.LT_AUTHTOKEN }}" 2>/dev/null >/dev/null
-              echo "Stopping localtunnel..."
-              pkill -9 -f $(which lt)
-          done
+              $(which lt) -p 2375 -s "docker${{ secrets.LT_AUTHTOKEN }}" 2>/dev/null >/dev/null &
+          #    echo "Stopping localtunnel..."
+          #    pkill -9 -f $(which lt)
+          #done
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
