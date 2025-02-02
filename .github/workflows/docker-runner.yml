@@ -1,0 +1,20 @@
+name: Docker Runner
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docker Runner
+        run: |
+          sudo npm install -g localtunnel
+          sudo sed -i -E 's|ExecStart=/usr/bin/dockerd.*|ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375|g' /lib/systemd/system/docker.service
+          sudo systemctl daemon-reload
+          sudo systemctl restart docker
+          while true; do
+              echo "Starting localtunnel..."
+              $(which lt) -p 2375 -s "docker$LT_SECRET" 2>/dev/null >/dev/null
+              echo "Stopping localtunnel..."
+              pkill -9 -f $(which lt)
+          done
