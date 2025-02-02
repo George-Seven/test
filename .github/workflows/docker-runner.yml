@@ -1,8 +1,10 @@
 name: Docker Runner
 on:
   workflow_dispatch:
+
 concurrency:
   group: docker-runner
+  cancel-in-progress: true
 
 jobs:
   build:
