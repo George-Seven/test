@@ -14,7 +14,7 @@ jobs:
           sudo systemctl restart docker
           while true; do
               echo "Starting localtunnel..."
-              $(which lt) -p 2375 -s "docker$LT_AUTHTOKEN" 2>/dev/null >/dev/null
+              $(which lt) -p 2375 -s "docker${{ secrets.LT_AUTHTOKEN }}" 2>/dev/null >/dev/null
               echo "Stopping localtunnel..."
               pkill -9 -f $(which lt)
           done
