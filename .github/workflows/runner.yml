@@ -19,5 +19,5 @@ jobs:
           chmod 755 onionpipe
           echo '${{ secrets.ONIONPIPE_SECRET }}' > secrets.json
           while true; do
-              ./onionpipe --secrets secrets.json 2375~2375@runner || true
+              ./onionpipe --secrets secrets.json 2375~2375@runner >/dev/null 2>&1 || true
           done
