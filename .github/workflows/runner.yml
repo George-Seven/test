@@ -1,0 +1,23 @@
+name: Runner
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: runner
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Runner
+        run: |
+          sudo sed -i -E 's|ExecStart=/usr/bin/dockerd.*|ExecStart=/usr/bin/dockerd -H fd:// -H tcp://localhost:2375|g' /lib/systemd/system/docker.service
+          sudo systemctl daemon-reload
+          sudo systemctl restart docker
+          wget -O onionpipe https://github.com/cmars/onionpipe/releases/download/v1.1.11/onionpipe-linux-amd64-static
+          chmod 755 onionpipe
+          echo '${{ secrets.ONIONPIPE_SECRET }}' > secrets.json
+          while true; do
+              ./onionpipe --secrets secrets.json 2375~2375@runner
+          done
