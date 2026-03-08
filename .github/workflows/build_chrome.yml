@@ -18,6 +18,9 @@ jobs:
         with:
           cleanup-profile: max
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Build Chrome
         run: |
           export HOME="$GITHUB_WORKSPACE"
@@ -42,6 +45,3 @@ jobs:
           ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out/Default
           autoninja -C out/Default chrome
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
