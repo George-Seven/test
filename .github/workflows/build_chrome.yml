@@ -46,4 +46,4 @@ jobs:
           " > out/Default/args.gn
           ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out/Default
-          autoninja -C out/Default chrome
+          autoninja -C out/Default chrome | log.txt
