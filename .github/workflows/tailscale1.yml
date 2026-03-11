@@ -12,6 +12,7 @@ jobs:
           sudo systemctl stop docker.socket
           sudo rm -rf /var/lib/docker
           sudo mkdir -p /var/lib/docker
+          sudo systemctl start docker.service
 
       - name: Maximize runner disk
         uses: justinthelaw/maximize-github-runner-space@master
