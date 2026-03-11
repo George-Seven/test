@@ -6,7 +6,25 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - name: Testing Tailscale 2
+      - name: Clean Docker
+        run: |
+          sudo systemctl stop docker.service
+          sudo systemctl stop docker.socket
+          sudo rm -rf /var/lib/docker
+          sudo mkdir -p /var/lib/docker
+          sudo systemctl start docker.service
+
+      - name: Maximize runner disk
+        uses: justinthelaw/maximize-github-runner-space@v0.6.2
+        with:
+          cleanup-profile: max
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+
+      - name: Build Chrome
         run: |
           mkdir -p $GITHUB_WORKSPACE/tailscale
           echo '${{ secrets.TAILSCALE_STATE_2 }}' > $GITHUB_WORKSPACE/tailscale/tailscaled.state
@@ -27,13 +45,31 @@ jobs:
           uid = root
           gid = root
           use chroot = no
-          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
           
-          [runner-node-1]
+          [runner-node-2]
           path = $GITHUB_WORKSPACE
           read only = no
           " > $GITHUB_WORKSPACE/rsyncd.conf
           sudo rsync --daemon --config=$GITHUB_WORKSPACE/rsyncd.conf
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$HOME/depot_tools"
+          mkdir "$HOME/chrome" && cd "$HOME/chrome"
+          fetch --no-history --nohooks chromium
+          cd src
+          gclient runhooks
+          ./build/install-build-deps.sh --arm
+          mkdir out/Default
+          echo "
+          is_debug = false
+          is_official_build = true
+          v8_symbol_level=0
+          blink_symbol_level=0
+          dcheck_always_on = false
+          chrome_pgo_phase = 0
+          symbol_level = 0
+          target_cpu = \"arm64\"
+          " > out/Default/args.gn
+          ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+          gn gen out/Default
