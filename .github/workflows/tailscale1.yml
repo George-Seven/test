@@ -50,6 +50,7 @@ jobs:
           [runner-node-1]
           path = $GITHUB_WORKSPACE
           read only = no
+          munge symlinks = no
           " > $GITHUB_WORKSPACE/rsyncd.conf
           sudo rsync --daemon --config=$GITHUB_WORKSPACE/rsyncd.conf
           export HOME="$GITHUB_WORKSPACE"
