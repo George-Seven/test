@@ -9,7 +9,7 @@ jobs:
       - name: Testing Tailscale 1
         run: |
           mkdir -p $GITHUB_WORKSPACE/tailscale
-          echo "${{ secrets.TAILSCALE_STATE_1 }}" > $GITHUB_WORKSPACE/tailscale/tailscaled.state
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > $GITHUB_WORKSPACE/tailscale/tailscaled.state
           docker run -d \
             --name tailscale \
             --restart unless-stopped \
