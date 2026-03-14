@@ -81,7 +81,7 @@ jobs:
           ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out/Default
           sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
-          timeout 5m autoninja -C out/Default && touch out/Default/.build_complete || true
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
           NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
           if [ -f out/Default/.build_complete ]; then
             curl -X POST \
@@ -142,7 +142,7 @@ jobs:
           rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
           cd "$HOME/chrome/src"
           sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
-          timeout 5m autoninja -C out/Default && touch out/Default/.build_complete || true
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
           NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
           if [ -f out/Default/.build_complete ]; then
             curl -X POST \
@@ -170,7 +170,7 @@ jobs:
       - name: Cycle 3
         if: ${{ inputs.cycle == '3' }}
         run: |
-          mkdir -p $GITHUB_WORKSPACE/tailscale
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
           #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
           echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
           docker run --rm -d \
@@ -203,7 +203,7 @@ jobs:
           rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
           cd "$HOME/chrome/src"
           sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
-          timeout 5m autoninja -C out/Default && touch out/Default/.build_complete || true
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
           NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
           if [ -f out/Default/.build_complete ]; then
             curl -X POST \
@@ -264,7 +264,7 @@ jobs:
           rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
           cd "$HOME/chrome/src"
           sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
-          timeout 5m autoninja -C out/Default && touch out/Default/.build_complete || true
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
           NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
           if [ -f out/Default/.build_complete ]; then
             curl -X POST \
@@ -292,7 +292,7 @@ jobs:
       - name: Cycle 5
         if: ${{ inputs.cycle == '5' }}
         run: |
-          mkdir -p $GITHUB_WORKSPACE/tailscale
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
           #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
           echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
           docker run --rm -d \
@@ -325,8 +325,992 @@ jobs:
           rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
           cd "$HOME/chrome/src"
           sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
-          timeout 5m autoninja -C out/Default && touch out/Default/.build_complete || true
-          # override next cycle to end since last cycle
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 6
+        if: ${{ inputs.cycle == '6' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 7
+        if: ${{ inputs.cycle == '7' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 8
+        if: ${{ inputs.cycle == '8' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 9
+        if: ${{ inputs.cycle == '9' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 10
+        if: ${{ inputs.cycle == '10' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 11
+        if: ${{ inputs.cycle == '11' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 12
+        if: ${{ inputs.cycle == '12' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 13
+        if: ${{ inputs.cycle == '13' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 14
+        if: ${{ inputs.cycle == '14' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 15
+        if: ${{ inputs.cycle == '15' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 16
+        if: ${{ inputs.cycle == '16' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 17
+        if: ${{ inputs.cycle == '17' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 18
+        if: ${{ inputs.cycle == '18' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 19
+        if: ${{ inputs.cycle == '19' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"998\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 20
+        if: ${{ inputs.cycle == '20' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_2 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-2 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_1 }}
+          
+          [runner-node-2]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          NEXT_CYCLE=$(( ${{ inputs.cycle }} + 1 ))
+          if [ -f out/Default/.build_complete ]; then
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"999\"}}"
+          else
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
+          fi
+          while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          touch "$GITHUB_WORKSPACE/.rsync_complete"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          docker stop tailscale
+          #sleep 2h
+          exit 0
+
+      - name: Cycle 21
+        if: ${{ inputs.cycle == '21' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          echo '${{ secrets.TAILSCALE_STATE_1 }}' > "$GITHUB_WORKSPACE/tailscale/tailscaled.state"
+          docker run --rm -d \
+            --name tailscale \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add NET_RAW \
+            --device /dev/net/tun:/dev/net/tun \
+            -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
+            -e TS_HOSTNAME=runner-node-1 \
+            -e TS_STATE_DIR=/var/lib/tailscale \
+            -e TS_USERSPACE=0 \
+            -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
+            tailscale/tailscale:latest
+          echo "
+          uid = root
+          gid = root
+          use chroot = no
+          hosts allow = ${{ secrets.TAILSCALE_IP_2 }}
+          
+          [runner-node-1]
+          path = $GITHUB_WORKSPACE
+          read only = no
+          munge symlinks = no
+          " > "$GITHUB_WORKSPACE/rsyncd.conf"
+          sudo rsync --daemon --config="$GITHUB_WORKSPACE/rsyncd.conf"
+          export HOME="$GITHUB_WORKSPACE"
+          export PATH="$HOME/depot_tools:$PATH"
+          while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
+          rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
+          cd "$HOME/chrome/src"
+          sudo swapoff -a; sudo rm -f /swapfile; sudo fallocate -l 16G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile
+          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          # override next cycle to end task, since last cycle
           NEXT_CYCLE=998
           if [ -f out/Default/.build_complete ]; then
             curl -X POST \
@@ -351,18 +1335,12 @@ jobs:
           #sleep 2h
           exit 0
 
-      - name: Setup tmate session
-        if: ${{ inputs.cycle == '998' || inputs.cycle == '999' }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
-
       - name: Build Complete
         if: ${{ inputs.cycle == '998' || inputs.cycle == '999' }}
         run: |
-          mkdir -p $GITHUB_WORKSPACE/tailscale
+          mkdir -p "$GITHUB_WORKSPACE/tailscale"
           [ "${{ inputs.cycle }}" = "998" ] && echo '${{ secrets.TAILSCALE_STATE_2 }}' > $GITHUB_WORKSPACE/tailscale/tailscaled.state || echo '${{ secrets.TAILSCALE_STATE_1 }}' > $GITHUB_WORKSPACE/tailscale/tailscaled.state
-          echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
+          #echo "${{ secrets.GITHUB_TOKEN }}" > "$GITHUB_WORKSPACE/.GH_TOKEN"
           [ "${{ inputs.cycle }}" = "998" ] &&  RUNNER_NODE="runner-node-2" || RUNNER_NODE="runner-node-1"
           docker run --rm -d \
             --name tailscale \
@@ -394,5 +1372,16 @@ jobs:
           while [ ! -f "$GITHUB_WORKSPACE/.rsync_complete" ]; do sleep 5; done
           rm -rf "$GITHUB_WORKSPACE/.rsync_complete"
           docker stop tailscale
+          sudo rm -rf "$GITHUB_WORKSPACE/tailscale"       
+
+      - name: Setup tmate session
+        if: ${{ inputs.cycle == '998' || inputs.cycle == '999' }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+
+      - name: test
+        if: ${{ inputs.cycle == '998' || inputs.cycle == '999' }}
+        run: |
           sleep infinity
           exit 0
