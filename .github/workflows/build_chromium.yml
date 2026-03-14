@@ -97,11 +97,11 @@ jobs:
             -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
           fi
           while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
           touch "$GITHUB_WORKSPACE/.rsync_complete"
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
           docker stop tailscale
           #sleep 2h
           exit 0
@@ -158,11 +158,11 @@ jobs:
             -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
           fi
           while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
           touch "$GITHUB_WORKSPACE/.rsync_complete"
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
           docker stop tailscale
           #sleep 2h
           exit 0
@@ -219,11 +219,11 @@ jobs:
             -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
           fi
           while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
           touch "$GITHUB_WORKSPACE/.rsync_complete"
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
           docker stop tailscale
           #sleep 2h
           exit 0
@@ -280,11 +280,11 @@ jobs:
             -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
           fi
           while ! rsync rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1 >/dev/null 2>&1; do sleep 5; done
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/chrome
           touch "$GITHUB_WORKSPACE/.rsync_complete"
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_1 }}/runner-node-1/.rsync_complete
           docker stop tailscale
           #sleep 2h
           exit 0
@@ -342,11 +342,11 @@ jobs:
             -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$NEXT_CYCLE\"}}"
           fi
           while ! rsync rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2 >/dev/null 2>&1; do sleep 5; done
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/depot_tools
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.cache
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/chrome
           touch "$GITHUB_WORKSPACE/.rsync_complete"
-          rsync -a --info=progress2 --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
+          rsync -a --inplace "$GITHUB_WORKSPACE/.rsync_complete" rsync://${{ secrets.TAILSCALE_IP_2 }}/runner-node-2/.rsync_complete
           docker stop tailscale
           #sleep 2h
           exit 0
