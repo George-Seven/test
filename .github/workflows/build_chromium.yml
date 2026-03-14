@@ -1364,9 +1364,9 @@ jobs:
             -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
             tailscale/tailscale:latest
           if [ "${{ inputs.cycle }}" = "998" ]; then
-            TAILSCALE_IP="${{ secrets.TAILSCALE_IP_2 }}" 
+            TAILSCALE_IP="${{ secrets.TAILSCALE_IP_1 }}" 
           else
-            TAILSCALE_IP="${{ secrets.TAILSCALE_IP_1 }}"
+            TAILSCALE_IP="${{ secrets.TAILSCALE_IP_2 }}"
           fi
           echo "
           uid = root
