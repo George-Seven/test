@@ -125,7 +125,7 @@ jobs:
           sudo mkswap /swapfile
           sudo swapon /swapfile
 
-          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
+          timeout m autoninja -C out/Default && touch out/Default/.build_complete || true
 
           NEXT_CYCLE=$((CYCLE + 1))
 
