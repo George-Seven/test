@@ -96,7 +96,7 @@ jobs:
             gclient runhooks
 
             mkdir -p out/Default
-            cat > out/Default/args.gn <<EOF
+            echo "
             is_debug = false
             is_official_build = true
             v8_symbol_level=0
@@ -104,8 +104,8 @@ jobs:
             dcheck_always_on = false
             chrome_pgo_phase = 0
             symbol_level = 0
-            target_cpu = "arm64"
-            EOF
+            target_cpu = \"arm64\" 
+            " > out/Default/args.gn
 
             ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
             gn gen out/Default
