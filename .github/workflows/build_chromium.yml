@@ -1,5 +1,5 @@
 name: Build Chromium
-run-name: ${{ (inputs.cycle == '998' || inputs.cycle == '999') && 'Releasing Build' || format('Chromium Build (Cycle {0})', inputs.cycle) }}
+run-name: ${{ (inputs.cycle == '998' || inputs.cycle == '999') && 'Releasing Chromium Build' || format('Chromium Build (Cycle {0})', inputs.cycle) }}
   
 on:
   workflow_dispatch:
@@ -143,7 +143,10 @@ jobs:
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
             -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$FINAL\"}}"
 
-          while ! rsync rsync://$PEER_IP/ >/dev/null 2>&1; do sleep 5; done
+          while ! rsync rsync://$PEER_IP/ | grep -q "$NODE"; do
+            echo "Still waiting for $NODE on $PEER_IP..."
+            sleep 5
+          done
 
           rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://$PEER_IP/$NODE/depot_tools
           rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://$PEER_IP/$NODE/.cache
