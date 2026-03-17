@@ -1,7 +1,9 @@
 name: Build Chromium
-run-name: ${{ inputs.cycle == '998' || inputs.cycle == '999'
-  && 'Releasing Build'
-  || format('Chromium Build (Cycle {0})', inputs.cycle) }}
+run-name: ${{ 
+  (inputs.cycle == '998' || inputs.cycle == '999') 
+  && format('Releasing Build') 
+  || format('Chromium Build (Cycle {0})', inputs.cycle) 
+}}
   
 on:
   workflow_dispatch:
