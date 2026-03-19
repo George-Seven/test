@@ -1,5 +1,5 @@
 name: Build Chromium
-run-name: ${{ (inputs.cycle == '998' || inputs.cycle == '999') && 'Releasing Chromium Build' || format('Chromium Build (Cycle {0})', inputs.cycle) }}
+run-name: ${{ (inputs.cycle == '998' || inputs.cycle == '999') && 'Releasing Build' || format('Chromium Build (Cycle {0})', inputs.cycle) }}
   
 on:
   workflow_dispatch:
@@ -36,19 +36,21 @@ jobs:
       - name: Run Cycle
         if: ${{ inputs.cycle != '998' && inputs.cycle != '999' }}
         run: |
-          CYCLE=${{ inputs.cycle }}
+          CYCLE="${{ inputs.cycle }}"
 
-          # Node selection (normal cycles only)
+          # Node selection
           if (( CYCLE % 2 == 1 )); then
             NODE="runner-node-1"
             STATE='${{ secrets.TAILSCALE_STATE_1 }}'
+            PEER_NODE="runner-node-2"
             PEER_IP='${{ secrets.TAILSCALE_IP_2 }}'
-            FINAL_CODE=998
+            FINAL_CODE="998"
           else
             NODE="runner-node-2"
             STATE='${{ secrets.TAILSCALE_STATE_2 }}'
+            PEER_NODE="runner-node-1"
             PEER_IP='${{ secrets.TAILSCALE_IP_1 }}'
-            FINAL_CODE=999
+            FINAL_CODE="999"
           fi
 
           echo "Running cycle $CYCLE on $NODE"
@@ -63,7 +65,7 @@ jobs:
             --cap-add NET_RAW \
             --device /dev/net/tun:/dev/net/tun \
             -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
-            -e TS_HOSTNAME=$NODE \
+            -e TS_HOSTNAME="$NODE" \
             -e TS_STATE_DIR=/var/lib/tailscale \
             -e TS_USERSPACE=0 \
             -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
@@ -125,35 +127,32 @@ jobs:
           sudo mkswap /swapfile
           sudo swapon /swapfile
 
-          timeout m autoninja -C out/Default && touch out/Default/.build_complete || true
+          timeout 1m autoninja -C out/Default && touch out/Default/.build_complete || true
 
-          NEXT_CYCLE=$((CYCLE + 1))
+          NEXT_CYCLE="$((CYCLE + 1))"
 
           if [ -f out/Default/.build_complete ]; then
-            FINAL=$FINAL_CODE
+            FINAL="$FINAL_CODE"
           elif [ "$CYCLE" = "15" ]; then
-            FINAL=$FINAL_CODE
+            FINAL="$FINAL_CODE"
           else
-            FINAL=$NEXT_CYCLE
+            FINAL="$NEXT_CYCLE"
           fi
 
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches" \
             -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$FINAL\"}}"
 
-          while ! rsync rsync://$PEER_IP/ | grep -q "$NODE"; do
-            echo "Still waiting for $NODE on $PEER_IP..."
-            sleep 5
-          done
+          while ! rsync "rsync://$PEER_IP/" >/dev/null 2>&1; do sleep 5; done
 
-          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" rsync://$PEER_IP/$NODE/depot_tools
-          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" rsync://$PEER_IP/$NODE/.cache
-          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" rsync://$PEER_IP/$NODE/chrome
+          rsync -a --inplace "$GITHUB_WORKSPACE/depot_tools/" "rsync://$PEER_IP/$PEER_NODE/depot_tools"
+          rsync -a --inplace "$GITHUB_WORKSPACE/.cache/" "rsync://$PEER_IP/$PEER_NODE/.cache"
+          rsync -a --inplace "$GITHUB_WORKSPACE/chrome/" "rsync://$PEER_IP/$PEER_NODE/chrome"
 
           touch "$GITHUB_WORKSPACE/.rsync_complete"
-          rsync -a "$GITHUB_WORKSPACE/.rsync_complete" rsync://$PEER_IP/$NODE/.rsync_complete
+          rsync -a "$GITHUB_WORKSPACE/.rsync_complete" "rsync://$PEER_IP/$PEER_NODE/.rsync_complete"
 
           docker stop tailscale
 
@@ -163,16 +162,14 @@ jobs:
       - name: Build Complete
         if: ${{ inputs.cycle == '998' || inputs.cycle == '999' }}
         run: |
-          CYCLE=${{ inputs.cycle }}
+          CYCLE="${{ inputs.cycle }}"
 
           if [ "$CYCLE" = "998" ]; then
-            RUNNER_NODE="runner-node-1"
-            STATE='${{ secrets.TAILSCALE_STATE_1 }}'
-            PEER_IP='${{ secrets.TAILSCALE_IP_2 }}'
-          else
-            RUNNER_NODE="runner-node-2"
+            NODE="runner-node-2"
             STATE='${{ secrets.TAILSCALE_STATE_2 }}'
-            PEER_IP='${{ secrets.TAILSCALE_IP_1 }}'
+          else
+            NODE="runner-node-1"
+            STATE='${{ secrets.TAILSCALE_STATE_1 }}'
           fi
 
           mkdir -p "$GITHUB_WORKSPACE/tailscale"
@@ -185,7 +182,7 @@ jobs:
             --cap-add NET_RAW \
             --device /dev/net/tun:/dev/net/tun \
             -e TS_AUTHKEY="${{ secrets.TAILSCALE_KEY }}" \
-            -e TS_HOSTNAME="$RUNNER_NODE" \
+            -e TS_HOSTNAME="$NODE" \
             -e TS_STATE_DIR=/var/lib/tailscale \
             -e TS_USERSPACE=0 \
             -v "$GITHUB_WORKSPACE/tailscale:/var/lib/tailscale" \
@@ -197,7 +194,7 @@ jobs:
           use chroot = no
           hosts allow = $PEER_IP
 
-          [$RUNNER_NODE]
+          [$NODE]
           path = $GITHUB_WORKSPACE
           read only = no
           munge symlinks = no
@@ -220,7 +217,7 @@ jobs:
       - name: Create Release
         if: ${{ inputs.cycle == '998' || inputs.cycle == '999' }}
         run: |
-          cd $GITHUB_WORKSPACE/chrome/src
+          cd "$GITHUB_WORKSPACE/chrome/src"
           mkdir chromium-dist
 
           cp out/Default/chrome chromium-dist/
