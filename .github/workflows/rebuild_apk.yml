@@ -20,6 +20,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup Java 21
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+  
       - name: Build
         run: |
           wget -O lspatch.jar "$(curl -s https://api.github.com/repos/JingMatrix/LSPatch/releases/latest | jq -r '.assets[] | select(.name | test("^lspatch.jar$")) | .browser_download_url')"
