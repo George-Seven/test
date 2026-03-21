@@ -47,6 +47,8 @@ jobs:
         run: |
           set -e
 
+          BASENAME="patched"
+
           wget -q -O lspatch.jar "$(curl -s https://api.github.com/repos/JingMatrix/LSPatch/releases/latest | jq -r '.assets[] | select(.name | test("^lspatch.jar$")) | .browser_download_url')"
 
           wget -q -O Xposed-Disable-FLAG_SECURE.apk "$(curl -s https://api.github.com/repos/Xposed-Modules-Repo/com.varuns2002.disable_flag_secure/releases/latest | jq -r '.assets[] | select(.name | test("^Xposed-Disable-FLAG_SECURE_.*\\.apk$")) | .browser_download_url')"
@@ -63,6 +65,10 @@ jobs:
             else
               ./apkeep -a "${{ github.event.inputs.app_id }}" ./apk_download
             fi
+
+            FILE="$(basename ./apk_download/*)"
+            BASENAME="${FILE%.*}"
+
           elif [ -n "${{ github.event.inputs.apk_url }}" ]; then
             wget -q -P ./apk_download "${{ github.event.inputs.apk_url }}"
           else
@@ -89,10 +95,12 @@ jobs:
             $INJECT_FLAG \
             -o lspatch main.apk
 
-          mv lspatch/* patched.apk
+          mkdir output
+
+          mv lspatch/* "lspatch/${BASENAME}.apk"
 
       - name: Upload patched APK
         uses: actions/upload-artifact@v4
         with:
           name: patched-apk
-          path: patched.apk
+          path: "lspatch/*"
