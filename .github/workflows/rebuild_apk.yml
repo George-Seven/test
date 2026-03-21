@@ -1,0 +1,64 @@
+name: Rebuild APK with Disable FLAG_SECURE
+
+on:
+  workflow_dispatch:
+    inputs:
+      apk_url:
+        description: "Direct APK download link"
+        required: true
+      signture_bypass:
+        description: "Signature bypass level (0, 1, 2) [default: 2]"
+        required: false
+        default: "2"
+      injectdex:
+        description: "Inject dex directly (true/false) [default: false]"
+        required: false
+        default: "false"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Build
+        run: |
+          wget -O lspatch.jar "$(curl -s https://api.github.com/repos/JingMatrix/LSPatch/releases/latest | jq -r '.assets[] | select(.name | test("^lspatch.jar$")) | .browser_download_url')"
+
+          wget -O Xposed-Disable-FLAG_SECURE.apk "$(curl -s https://api.github.com/repos/Xposed-Modules-Repo/com.varuns2002.disable_flag_secure/releases/latest | jq -r '.assets[] | select(.name | test("^Xposed-Disable-FLAG_SECURE_.*\\.apk$")) | .browser_download_url')"
+
+          mkdir apk_download
+
+          wget -P ./apk_download "${{ github.event.inputs.apk_url }}"
+
+          DOWNLOADED_FILE=$(find ./apk_download -type f | head -n 1)
+          BASENAME=$(basename "$DOWNLOADED_FILE")
+          APP_NAME="${BASENAME%.*}"
+
+          if file "$DOWNLOADED_FILE" | grep -q "Android package (APK)"; then
+            wget -O APKEditor.jar "$(curl -s https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | test("^APKEditor-.*\\.jar$")) | .browser_download_url')"
+            java -jar APKEditor.jar m -i "$DOWNLOADED_FILE" -o main.apk -extractNativeLibs true
+          else
+            cp "$DOWNLOADED_FILE" main.apk
+          fi
+
+          mkdir lspatch
+
+          INJECT_FLAG=""
+          if [ "${{ github.event.inputs.injectdex }}" = "true" ]; then
+            INJECT_FLAG="--injectdex"
+          fi
+
+          java -jar lspatch.jar \
+            -l ${{ github.event.inputs.signture_bypass }} \
+            -m Xposed-Disable-FLAG_SECURE.apk \
+            $INJECT_FLAG \
+            -o lspatch main.apk
+
+          OUTPUT_APK=$(find lspatch -name "*.apk" | head -n 1)
+          mv "$OUTPUT_APK" "lspatch/${APP_NAME}.apk"
+
+      - name: Upload patched APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: patched-apk
+          path: lspatch/*
