@@ -14,7 +14,7 @@ on:
         required: false
         default: "2"
       injectdex:
-        description: "Inject dex directly (true/false) [default: false]"
+        description: "Inject dex directly, useful for browsers (true/false) [default: false]"
         required: false
         default: "false"
 
