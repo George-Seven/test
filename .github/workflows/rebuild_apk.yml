@@ -16,7 +16,7 @@ on:
         required: false
 
       signture_bypass:
-        description: "Signature bypass level"
+        description: "Signature bypass level (if apk has protection)"
         default: "2"
         type: choice
         options:
@@ -25,7 +25,7 @@ on:
           - "2"
 
       injectdex:
-        description: "Inject dex directly"
+        description: "Inject dex directly (useful if apk is browser)"
         default: "false"
         type: choice
         options:
