@@ -12,23 +12,27 @@ on:
         required: false
 
       download_source:
-        description: "APK download source"
+        description: "APK download source (apk-pure, f-droid, huawei-app-gallery)"
         required: false
-        type: choice
-        options:
-          - apk-pure
-          - f-droid
-          - huawei-app-gallery
 
       signture_bypass:
-        description: "Signature bypass level (0, 1, 2) [default: 2]"
+        description: "Signature bypass level"
         required: false
         default: "2"
+        type: choice
+        options:
+          - "0"
+          - "1"
+          - "2"
 
       injectdex:
-        description: "Inject dex directly, useful for browsers (true/false) [default: false]"
+        description: "Inject dex directly"
         required: false
         default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 jobs:
   build:
