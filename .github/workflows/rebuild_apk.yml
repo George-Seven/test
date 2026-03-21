@@ -36,7 +36,7 @@ jobs:
 
           wget -P ./apk_download "${{ github.event.inputs.apk_url }}"
 
-          if file ./apk_download/* | grep -q "Android package (APK)"; then
+          if ! file ./apk_download/* | grep -q "Android package (APK)"; then
             wget -O APKEditor.jar "$(curl -s https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | test("^APKEditor-.*\\.jar$")) | .browser_download_url')"
             java -jar APKEditor.jar m -i ./apk_download/* -o main.apk -extractNativeLibs true
           else
