@@ -36,15 +36,11 @@ jobs:
 
           wget -P ./apk_download "${{ github.event.inputs.apk_url }}"
 
-          DOWNLOADED_FILE=$(find ./apk_download -type f | head -n 1)
-          BASENAME=$(basename "$DOWNLOADED_FILE")
-          APP_NAME="${BASENAME%.*}"
-
-          if file "$DOWNLOADED_FILE" | grep -q "Android package (APK)"; then
+          if file ./apk_download/* | grep -q "Android package (APK)"; then
             wget -O APKEditor.jar "$(curl -s https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | test("^APKEditor-.*\\.jar$")) | .browser_download_url')"
-            java -jar APKEditor.jar m -i "$DOWNLOADED_FILE" -o main.apk -extractNativeLibs true
+            java -jar APKEditor.jar m -i ./apk_download/* -o main.apk -extractNativeLibs true
           else
-            cp "$DOWNLOADED_FILE" main.apk
+            cp ./apk_download/* main.apk
           fi
 
           mkdir lspatch
@@ -60,11 +56,10 @@ jobs:
             $INJECT_FLAG \
             -o lspatch main.apk
 
-          OUTPUT_APK=$(find lspatch -name "*.apk" | head -n 1)
-          mv "$OUTPUT_APK" "lspatch/${APP_NAME}.apk"
+          mv lspatch/* patched.apk
 
       - name: Upload patched APK
         uses: actions/upload-artifact@v4
         with:
           name: patched-apk
-          path: lspatch/*
+          path: patched.apk
