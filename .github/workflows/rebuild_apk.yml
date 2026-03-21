@@ -3,9 +3,12 @@ name: Rebuild APK with Disable FLAG_SECURE
 on:
   workflow_dispatch:
     inputs:
+      app_id:
+        description: "Android app package (e.g. com.instagram.android or com.app@version)"
+        required: false
       apk_url:
-        description: "Direct APK download link"
-        required: true
+        description: "Direct APK download link (only if you don't use app_id)"
+        required: false
       signture_bypass:
         description: "Signature bypass level (0, 1, 2) [default: 2]"
         required: false
@@ -25,20 +28,39 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-  
+
       - name: Build
         run: |
-          wget -O lspatch.jar "$(curl -s https://api.github.com/repos/JingMatrix/LSPatch/releases/latest | jq -r '.assets[] | select(.name | test("^lspatch.jar$")) | .browser_download_url')"
+          set -e
 
-          wget -O Xposed-Disable-FLAG_SECURE.apk "$(curl -s https://api.github.com/repos/Xposed-Modules-Repo/com.varuns2002.disable_flag_secure/releases/latest | jq -r '.assets[] | select(.name | test("^Xposed-Disable-FLAG_SECURE_.*\\.apk$")) | .browser_download_url')"
+          wget -q -O lspatch.jar "$(curl -s https://api.github.com/repos/JingMatrix/LSPatch/releases/latest | jq -r '.assets[] | select(.name | test("^lspatch.jar$")) | .browser_download_url')"
+
+          wget -q -O Xposed-Disable-FLAG_SECURE.apk "$(curl -s https://api.github.com/repos/Xposed-Modules-Repo/com.varuns2002.disable_flag_secure/releases/latest | jq -r '.assets[] | select(.name | test("^Xposed-Disable-FLAG_SECURE_.*\\.apk$")) | .browser_download_url')"
+
+          wget -q -O apkeep "$(curl -s https://api.github.com/repos/EFForg/apkeep/releases/latest | jq -r '.assets[] | select(.name | test("^apkeep-x86_64-unknown-linux-gnu$")) | .browser_download_url')"
+
+          chmod +x apkeep
 
           mkdir apk_download
 
-          wget -P ./apk_download "${{ github.event.inputs.apk_url }}"
+          if [ -n "${{ github.event.inputs.app_id }}" ]; then
+            ./apkeep -a "${{ github.event.inputs.app_id }}" ./apk_download
+
+          elif [ -n "${{ github.event.inputs.apk_url }}" ]; then
+            wget -q -P ./apk_download "${{ github.event.inputs.apk_url }}"
+
+          else
+            echo "ERROR: You must provide either app_id or apk_url"
+            exit 1
+          fi
 
           if ! file ./apk_download/* | grep -q "Android package (APK)"; then
-            wget -O APKEditor.jar "$(curl -s https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | test("^APKEditor-.*\\.jar$")) | .browser_download_url')"
-            java -jar APKEditor.jar m -i ./apk_download/* -o main.apk -extractNativeLibs true
+            wget -q -O APKEditor.jar "$(curl -s https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | test("^APKEditor-.*\\.jar$")) | .browser_download_url')"
+
+            java -jar APKEditor.jar m \
+              -i ./apk_download/* \
+              -o main.apk \
+              -extractNativeLibs true
           else
             cp ./apk_download/* main.apk
           fi
