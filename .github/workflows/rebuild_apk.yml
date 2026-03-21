@@ -17,7 +17,6 @@ on:
 
       signture_bypass:
         description: "Signature bypass level"
-        required: false
         default: "2"
         type: choice
         options:
@@ -27,7 +26,6 @@ on:
 
       injectdex:
         description: "Inject dex directly"
-        required: false
         default: "false"
         type: choice
         options:
