@@ -8,7 +8,7 @@ on:
         required: false
 
       apk_url:
-        description: "Direct APK download link (only if you don't use app_id)"
+        description: "Direct APK download link (only if you don't use package name)"
         required: false
 
       download_source:
