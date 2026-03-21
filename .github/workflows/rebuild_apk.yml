@@ -6,13 +6,26 @@ on:
       app_id:
         description: "Android app package (e.g. com.instagram.android or com.app@version)"
         required: false
+
       apk_url:
         description: "Direct APK download link (only if you don't use app_id)"
         required: false
+
+      download_source:
+        description: "APK download source"
+        required: false
+        default: "apk-pure"
+        type: choice
+        options:
+          - apk-pure
+          - f-droid
+          - huawei-app-gallery
+
       signture_bypass:
         description: "Signature bypass level (0, 1, 2) [default: 2]"
         required: false
         default: "2"
+
       injectdex:
         description: "Inject dex directly, useful for browsers (true/false) [default: false]"
         required: false
@@ -40,32 +53,29 @@ jobs:
           wget -q -O apkeep "$(curl -s https://api.github.com/repos/EFForg/apkeep/releases/latest | jq -r '.assets[] | select(.name | test("^apkeep-x86_64-unknown-linux-gnu$")) | .browser_download_url')"
 
           chmod +x apkeep
-
-          mkdir apk_download
+          mkdir -p apk_download
 
           if [ -n "${{ github.event.inputs.app_id }}" ]; then
-            ./apkeep -a "${{ github.event.inputs.app_id }}" ./apk_download
-
+            SRC="${{ github.event.inputs.download_source }}"
+            if [ -n "$SRC" ]; then
+              ./apkeep -a "${{ github.event.inputs.app_id }}" -d "$SRC" ./apk_download
+            else
+              ./apkeep -a "${{ github.event.inputs.app_id }}" ./apk_download
+            fi
           elif [ -n "${{ github.event.inputs.apk_url }}" ]; then
             wget -q -P ./apk_download "${{ github.event.inputs.apk_url }}"
-
           else
-            echo "ERROR: You must provide either app_id or apk_url"
             exit 1
           fi
 
           if ! file ./apk_download/* | grep -q "Android package (APK)"; then
             wget -q -O APKEditor.jar "$(curl -s https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | test("^APKEditor-.*\\.jar$")) | .browser_download_url')"
-
-            java -jar APKEditor.jar m \
-              -i ./apk_download/* \
-              -o main.apk \
-              -extractNativeLibs true
+            java -jar APKEditor.jar m -i ./apk_download/* -o main.apk -extractNativeLibs true
           else
             cp ./apk_download/* main.apk
           fi
 
-          mkdir lspatch
+          mkdir -p lspatch
 
           INJECT_FLAG=""
           if [ "${{ github.event.inputs.injectdex }}" = "true" ]; then
