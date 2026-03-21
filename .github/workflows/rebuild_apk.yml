@@ -14,7 +14,6 @@ on:
       download_source:
         description: "APK download source"
         required: false
-        default: "apk-pure"
         type: choice
         options:
           - apk-pure
