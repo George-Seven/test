@@ -127,8 +127,36 @@ jobs:
           sudo mkswap /swapfile
           sudo swapon /swapfile
 
-          timeout 270m autoninja -C out/Default && touch out/Default/.build_complete || true
-
+          # Total lifetime (6 hours)
+          TOTAL_TIME=$((6 * 60 * 60))   # seconds
+          BUFFER_TIME=$((60 * 60))      # 1 hour
+          MAX_BUILD_TIME=$((270 * 60))  # 270 min
+          
+          # Get uptime in seconds
+          UPTIME=$(awk '{print int($1)}' /proc/uptime)
+          
+          # Remaining time
+          REMAINING=$((TOTAL_TIME - UPTIME))
+          
+          # Allowed build time
+          BUILD_TIME=$((REMAINING - BUFFER_TIME))
+          
+          # Clamp to max (270 min)
+          if [ "$BUILD_TIME" -gt "$MAX_BUILD_TIME" ]; then
+            BUILD_TIME=$MAX_BUILD_TIME
+          fi
+          
+          # Prevent negative timeout
+          if [ "$BUILD_TIME" -lt 0 ]; then
+            BUILD_TIME=0
+          fi
+          
+          echo "Uptime: $UPTIME sec"
+          echo "Remaining: $REMAINING sec"
+          echo "Build timeout: $((BUILD_TIME / 60)) minutes"
+          
+          timeout "${BUILD_TIME}s" autoninja -C out/Default && touch out/Default/.build_complete || true
+          
           NEXT_CYCLE="$((CYCLE + 1))"
 
           if [ -f out/Default/.build_complete ]; then
