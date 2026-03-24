@@ -146,7 +146,7 @@ jobs:
 
             mkdir -p "$HOME/chrome"
             cd "$HOME/chrome"
-            fetch --no-history --nohooks chromium
+            time fetch --no-history --nohooks chromium
 
             cd src
             
