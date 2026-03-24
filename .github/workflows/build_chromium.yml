@@ -8,6 +8,9 @@ on:
         description: "Current cycle number"
         required: false
         default: "1"
+      chromium_tag:
+        description: "Chromium tag"
+        required: false
 
 jobs:
   build:
@@ -17,6 +20,55 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Resolve Chromium Tag
+        run: |
+          set -e
+      
+          CYCLE="${{ inputs.cycle }}"
+          # Skip tag, since it takes too long
+          #INPUT_TAG="${{ inputs.chromium_tag }}"
+          INPUT_TAG=""
+      
+          echo "Cycle: $CYCLE"
+      
+          if [ "$CYCLE" = "1" ]; then
+            echo "Cycle 1: resolving tag"
+      
+            if [ -n "$INPUT_TAG" ]; then
+              echo "User provided tag: $INPUT_TAG"
+      
+              MATCH=$(git ls-remote --tags https://chromium.googlesource.com/chromium/src.git \
+                | awk -F/ '!/\^\{\}/ {print $3}' \
+                | grep -Fx "$INPUT_TAG" || true)
+      
+              if [ -z "$MATCH" ]; then
+                echo "❌ ERROR: Tag '$INPUT_TAG' does not exist in remote"
+                exit 1
+              fi
+      
+              LATEST_TAG="$INPUT_TAG"
+            else
+              echo "No tag provided, resolving latest..."
+      
+              LATEST_TAG="$(git ls-remote --tags https://chromium.googlesource.com/chromium/src.git \
+                | awk -F/ '!/\^\{\}/ && $3 ~ /^[0-9]+(\.[0-9]+)+$/ {print $3}' \
+                | sort -V | tail -n1)"
+            fi
+      
+          else
+            echo "Cycle > 1: expecting provided tag"
+      
+            if [ -z "$INPUT_TAG" ]; then
+              echo "❌ ERROR: chromium_tag must be provided for cycle > 1"
+              exit 1
+            fi
+      
+            LATEST_TAG="$INPUT_TAG"
+          fi
+      
+          echo "Using Chromium tag: $LATEST_TAG"
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
       - name: Clean Docker
         run: |
           sudo systemctl stop docker.service || true
@@ -38,7 +90,6 @@ jobs:
         run: |
           CYCLE="${{ inputs.cycle }}"
 
-          # Node selection
           if (( CYCLE % 2 == 1 )); then
             NODE="runner-node-1"
             STATE='${{ secrets.TAILSCALE_STATE_1 }}'
@@ -87,7 +138,9 @@ jobs:
 
           export HOME="$GITHUB_WORKSPACE"
           export PATH="$HOME/depot_tools:$PATH"
-
+          
+          LATEST_TAG="${{ env.LATEST_TAG }}"
+          
           if [ "$CYCLE" = "1" ]; then
             git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$HOME/depot_tools"
 
@@ -96,6 +149,10 @@ jobs:
             fetch --no-history --nohooks chromium
 
             cd src
+            
+            # Skip tag, since it takes too long
+            #gclient sync -r "$LATEST_TAG" --no-history --nohooks -j$(nproc)
+
             gclient runhooks
 
             mkdir -p out/Default
@@ -141,7 +198,6 @@ jobs:
             BUILD_TIME=$MAX_BUILD_TIME
           fi
           
-          # Prevent negative timeout
           if [ "$BUILD_TIME" -lt 0 ]; then
             BUILD_TIME=0
           fi
@@ -166,7 +222,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build_chromium.yml/dispatches" \
-            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$FINAL\"}}"
+            -d "{\"ref\":\"${{ github.ref_name }}\",\"inputs\":{\"cycle\":\"$FINAL\",\"chromium_tag\":\"$LATEST_TAG\"}}"
 
           while ! rsync "rsync://$PEER_IP/" >/dev/null 2>&1; do sleep 5; done
 
@@ -260,12 +316,12 @@ jobs:
           find chromium-dist -type f \( -name "*.so" -o -name "chrome*" \) \
             -exec third_party/llvm-build/Release+Asserts/bin/llvm-strip {} \; &>/dev/null || true
 
-          zip -r chromium-dist.zip chromium-dist/
+          tar -czf chromium-arm64-${{ env.LATEST_TAG }}.tar.gz chromium-dist/
 
       - name: Upload Release
         if: ${{ inputs.cycle == '998' || inputs.cycle == '999' }}
         uses: softprops/action-gh-release@v2
         with:
-          files: chrome/src/chromium-dist.zip
+          files: chrome/src/chromium-arm64-${{ env.LATEST_TAG }}.tar.gz
           prerelease: false
-          tag_name: chromium-arm64
+          tag_name: chromium-arm64-${{ env.LATEST_TAG }}
