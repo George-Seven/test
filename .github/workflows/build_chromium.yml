@@ -25,9 +25,7 @@ jobs:
           set -e
       
           CYCLE="${{ inputs.cycle }}"
-          # Skip tag, since it takes too long
-          #INPUT_TAG="${{ inputs.chromium_tag }}"
-          INPUT_TAG=""
+          INPUT_TAG="${{ inputs.chromium_tag }}"
       
           echo "Cycle: $CYCLE"
       
@@ -71,6 +69,7 @@ jobs:
 
       - name: Clean Docker
         run: |
+          echo "Using Chromium tag: $LATEST_TAG"
           sudo systemctl stop docker.service || true
           sudo systemctl stop docker.socket || true
           sudo rm -rf /var/lib/docker
@@ -205,7 +204,7 @@ jobs:
           echo "Build timeout: $((BUILD_TIME / 60)) minutes"
           
           timeout "${BUILD_TIME}s" autoninja -C out/Default && touch out/Default/.build_complete || true
-          
+
           NEXT_CYCLE="$((CYCLE + 1))"
 
           if [ -f out/Default/.build_complete ]; then
