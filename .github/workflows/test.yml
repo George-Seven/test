@@ -6,18 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - name: Clean Docker
-        run: |
-          sudo systemctl stop docker.service || true
-          sudo systemctl stop docker.socket || true
-          sudo rm -rf /var/lib/docker
-          sudo mkdir -p /var/lib/docker
-          sudo systemctl start docker.service
 
-      - name: Maximize runner disk
-        uses: justinthelaw/maximize-github-runner-space@v0.6.2
-        with:
-          cleanup-profile: max
   
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
