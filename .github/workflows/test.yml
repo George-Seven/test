@@ -6,7 +6,10 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+      - name: Setup upterm session
+        uses: owenthereal/action-upterm@v1
         with:
             detached: true
+            limit-access-to-actor: true
