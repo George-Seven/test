@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Clone Hydra
-        run: git clone https://github.com/MrDiamond64/Hydra.git && ( cd Hydra && git checkout 63326248671549df26cb1a7424e818285b4d9bb7; )
+        run: git clone https://github.com/MrDiamond64/Hydra.git && ( cd Hydra git checkout 63326248671549df26cb1a7424e818285b4d9bb7 )
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
