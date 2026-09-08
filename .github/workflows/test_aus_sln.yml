@@ -1,0 +1,27 @@
+name: Build aus
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Clone Hydra
+        run: git clone https://github.com/MrDiamond64/Hydra.git
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build Hydra/HydraMenu.sln --configuration Release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hydra-build
+          path: Hydra/**/bin/Release/**
+          if-no-files-found: error
