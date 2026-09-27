@@ -250,7 +250,7 @@ jobs:
             ## Installation
 
             ```sh
-            curl -LO https://github.com/${{ github.repository }}/releases/download/neo/neo.deb
+            curl -LO https://github.com/${{ github.repository }}/releases/download/neo/neo.deb && \
             apt install ./neo.deb
             ```
 
@@ -260,7 +260,7 @@ jobs:
             neo
             ```
 
-            Or for Termux:X11:
+            Or for Termux:X11 (recommended):
 
             ```sh
             neoX
