@@ -223,7 +223,7 @@ jobs:
 
           mkdir -p release
 
-          DEB="$(find output -type f -name '*.deb' -print -quit)"
+          DEB="$(find output -type f -name '*neo*.deb' -print -quit)"
 
           if [ -z "$DEB" ]; then
             echo "Error: no .deb package was produced."
@@ -254,13 +254,11 @@ jobs:
             apt install ./neo.deb
             ```
 
-            Then launch:
+            Install Termux:X11 apk for GUI :-
 
-            ```sh
-            neo
-            ```
+            https://github.com/termux/termux-x11/releases/download/nightly/termux-x11-universal-sharedUid-debug.apk
 
-            Or for Termux:X11 (recommended):
+            Then launch `neo` with Termux:X11 :-
 
             ```sh
             neoX
