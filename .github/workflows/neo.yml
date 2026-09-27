@@ -72,7 +72,7 @@ jobs:
 
           echo "==> Installing Electron..."
 
-          apt install -y electron
+          apt install -y electron --no-install-recommends
 
           echo "==> Electron installation complete."
           INSTALL_ELECTRON
@@ -90,7 +90,7 @@ jobs:
           apt update
           apt install -y x11-repo
 
-          apt install -y curl jq
+          apt install -y curl jq --no-install-recommends
 
           echo "==> Finding latest Termux:X11 nightly..."
 
@@ -140,7 +140,7 @@ jobs:
 
           echo "==> Installing Openbox..."
 
-          apt install -y openbox
+          apt install -y openbox --no-install-recommends
 
           echo "==> Openbox installation complete."
           INSTALL_OPENBOX
