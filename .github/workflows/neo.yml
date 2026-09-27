@@ -25,7 +25,6 @@ jobs:
           TERMUX_PKG_MAINTAINER="@George-Seven"
           TERMUX_PKG_VERSION=0.8.3
           TERMUX_PKG_SRCURL=https://github.com/hughhowey/neo/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
-          TERMUX_PKG_DEPENDS="openbox"
           TERMUX_PKG_BUILD_DEPENDS="nodejs, npm"
           TERMUX_PKG_BUILD_IN_SRC=true
           TERMUX_PKG_PLATFORM_INDEPENDENT=true
@@ -128,6 +127,26 @@ jobs:
           echo "==> Termux:X11 installation complete."
           INSTALL_X11
 
+              install -Dm755 /dev/stdin "$neo_dir/install-openbox.sh" <<-'INSTALL_OPENBOX'
+          #!/data/data/com.termux/files/usr/bin/bash
+
+          set -e
+
+          PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+
+          echo "==> Openbox was not found."
+          echo "==> Enabling X11 repository..."
+
+          apt update
+          apt install -y x11-repo
+
+          echo "==> Installing Openbox..."
+
+          apt install -y openbox
+
+          echo "==> Openbox installation complete."
+          INSTALL_OPENBOX
+
               install -Dm755 /dev/stdin "$TERMUX_PREFIX/bin/neo" <<-'LAUNCHER'
           #!/data/data/com.termux/files/usr/bin/bash
 
@@ -202,6 +221,15 @@ jobs:
 
           if ! command -v termux-x11 >/dev/null 2>&1; then
               echo "Error: termux-x11 executable not found after installation." >&2
+              exit 1
+          fi
+
+          if ! command -v openbox >/dev/null 2>&1; then
+              "$NEO_DIR/install-openbox.sh"
+          fi
+
+          if ! command -v openbox >/dev/null 2>&1; then
+              echo "Error: openbox executable not found after installation." >&2
               exit 1
           fi
 
