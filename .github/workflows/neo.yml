@@ -135,10 +135,8 @@ jobs:
           PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 
           echo "==> Openbox was not found."
-          echo "==> Enabling X11 repository..."
 
           apt update
-          apt install -y x11-repo
 
           echo "==> Installing Openbox..."
 
