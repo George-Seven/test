@@ -1,0 +1,300 @@
+name: Build Tasker Permissions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone Termux packages
+        run: |
+          git clone --depth 1 https://github.com/termux/termux-packages
+          cd termux-packages
+
+          mkdir -p x11-packages/tasker-permissions
+
+          cat > x11-packages/tasker-permissions/build.sh <<'EOF'
+          TERMUX_PKG_HOMEPAGE=https://github.com/joaomgcd/Tasker-Permissions
+          TERMUX_PKG_DESCRIPTION="Utility to easily grant Tasker permissions"
+          TERMUX_PKG_LICENSE="Apache-2.0"
+          TERMUX_PKG_MAINTAINER="@George-Seven"
+          TERMUX_PKG_VERSION=0.2.0
+          TERMUX_PKG_SRCURL=https://github.com/joaomgcd/Tasker-Permissions/archive/refs/heads/master.tar.gz
+          TERMUX_PKG_BUILD_DEPENDS="nodejs, npm"
+          TERMUX_PKG_BUILD_IN_SRC=true
+          TERMUX_PKG_PLATFORM_INDEPENDENT=true
+
+          termux_step_pre_configure() {
+              :
+          }
+
+          termux_step_make_install() {
+              local tasker_permissions_dir="$TERMUX_PREFIX/share/tasker-permissions"
+
+              mkdir -p "$tasker_permissions_dir"
+
+              cp -a . "$tasker_permissions_dir/"
+
+              rm -rf \
+                  "$tasker_permissions_dir/.git" \
+                  "$tasker_permissions_dir/.github" \
+                  "$tasker_permissions_dir/dist"
+
+              termux_setup_nodejs
+
+              cd "$tasker_permissions_dir"
+
+              npm install \
+                  --omit=dev \
+                  --ignore-scripts
+
+              rm -rf "$tasker_permissions_dir/node_modules/electron"
+              rm -rf "$tasker_permissions_dir/.npm"
+
+              install -Dm755 /dev/stdin "$tasker_permissions_dir/install-electron.sh" <<-'INSTALL_ELECTRON'
+          #!/data/data/com.termux/files/usr/bin/bash
+
+          set -e
+
+          PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+
+          echo "==> Electron was not found."
+          echo "==> Enabling TUR repository..."
+
+          apt update
+          apt install -y tur-repo
+
+          echo "==> Installing Electron..."
+
+          apt install -y electron --no-install-recommends
+
+          echo "==> Electron installation complete."
+          INSTALL_ELECTRON
+
+              install -Dm755 /dev/stdin "$tasker_permissions_dir/install-termux-x11.sh" <<-'INSTALL_X11'
+          #!/data/data/com.termux/files/usr/bin/bash
+
+          set -e
+
+          PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+
+          echo "==> termux-x11 was not found."
+          echo "==> Enabling X11 repository..."
+
+          apt update
+          apt install -y x11-repo
+
+          apt install -y curl jq --no-install-recommends
+
+          echo "==> Finding latest Termux:X11 nightly..."
+
+          TMPDIR="$(mktemp -d)"
+          trap 'rm -rf "$TMPDIR"' EXIT
+
+          TERMUX_X11_URL="$(
+              curl -fsSL \
+                  "https://api.github.com/repos/termux/termux-x11/releases/tags/nightly" |
+                  jq -r '
+                      .assets[]
+                      | select(.name | endswith(".deb"))
+                      | .browser_download_url
+                  ' |
+                  head -n 1
+          )"
+
+          if [ -z "$TERMUX_X11_URL" ] || [ "$TERMUX_X11_URL" = "null" ]; then
+              echo "Error: unable to find the Termux:X11 nightly package." >&2
+              exit 1
+          fi
+
+          echo "==> Downloading Termux:X11..."
+
+          curl -fsSL "$TERMUX_X11_URL" \
+              -o "$TMPDIR/termux-x11.deb"
+
+          echo "==> Installing Termux:X11..."
+
+          apt install -y "$TMPDIR/termux-x11.deb"
+
+          rm -f "$TMPDIR/termux-x11.deb"
+
+          echo "==> Termux:X11 installation complete."
+          INSTALL_X11
+
+              install -Dm755 /dev/stdin "$tasker_permissions_dir/install-openbox.sh" <<-'INSTALL_OPENBOX'
+          #!/data/data/com.termux/files/usr/bin/bash
+
+          set -e
+
+          PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+
+          echo "==> Openbox was not found."
+
+          apt update
+
+          echo "==> Installing Openbox..."
+
+          apt install -y openbox --no-install-recommends
+
+          echo "==> Openbox installation complete."
+          INSTALL_OPENBOX
+
+              install -Dm755 /dev/stdin "$TERMUX_PREFIX/bin/tasker-permissions" <<-'LAUNCHER'
+          #!/data/data/com.termux/files/usr/bin/bash
+
+          set -e
+
+          PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+          TASKER_PERMISSIONS_DIR="$PREFIX/share/tasker-permissions"
+
+          ELECTRON=""
+
+          if command -v electron >/dev/null 2>&1; then
+              ELECTRON="$(command -v electron)"
+          fi
+
+          if [ -z "$ELECTRON" ]; then
+              for i in "$PREFIX"/lib/electron*/electron; do
+                  if [ -x "$i" ]; then
+                      ELECTRON="$i"
+                      break
+                  fi
+              done
+          fi
+
+          if [ -z "$ELECTRON" ]; then
+              "$TASKER_PERMISSIONS_DIR/install-electron.sh"
+
+              if command -v electron >/dev/null 2>&1; then
+                  ELECTRON="$(command -v electron)"
+              fi
+
+              if [ -z "$ELECTRON" ]; then
+                  for i in "$PREFIX"/lib/electron*/electron; do
+                      if [ -x "$i" ]; then
+                          ELECTRON="$i"
+                          break
+                      fi
+                  done
+              fi
+          fi
+
+          if [ -z "$ELECTRON" ]; then
+              echo "Error: Electron executable not found after installation." >&2
+              exit 1
+          fi
+
+          export LIBGL_ALWAYS_SOFTWARE=1
+
+          unset MESA_LOADER_DRIVER_OVERRIDE
+          unset TU_DEBUG
+          unset VK_DRIVER_FILES
+          unset VK_ICD_FILENAMES
+          unset MESA_VK_WSI_PRESENT_MODE
+
+          exec "$ELECTRON" \
+              --fullscreen \
+              --disable-gpu \
+              "$TASKER_PERMISSIONS_DIR" \
+              "$@"
+          LAUNCHER
+
+              install -Dm755 /dev/stdin "$TERMUX_PREFIX/bin/tasker-permissionsX" <<-'LAUNCHER_X11'
+          #!/data/data/com.termux/files/usr/bin/bash
+
+          set -e
+
+          PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+          TASKER_PERMISSIONS_DIR="$PREFIX/share/tasker-permissions"
+
+          if ! command -v termux-x11 >/dev/null 2>&1; then
+              "$TASKER_PERMISSIONS_DIR/install-termux-x11.sh"
+          fi
+
+          if ! command -v termux-x11 >/dev/null 2>&1; then
+              echo "Error: termux-x11 executable not found after installation." >&2
+              exit 1
+          fi
+
+          if ! command -v openbox >/dev/null 2>&1; then
+              "$TASKER_PERMISSIONS_DIR/install-openbox.sh"
+          fi
+
+          if ! command -v openbox >/dev/null 2>&1; then
+              echo "Error: openbox executable not found after installation." >&2
+              exit 1
+          fi
+
+          exec termux-x11 -xstartup "openbox --startup tasker-permissions"
+          LAUNCHER_X11
+          }
+          EOF
+
+      - name: Build package
+        working-directory: termux-packages
+        run: |
+          chmod +x scripts/run-docker.sh
+          ./scripts/run-docker.sh ./build-package.sh -I -f tasker-permissions
+
+      - name: Prepare release
+        working-directory: termux-packages
+        run: |
+          set -e
+
+          mkdir -p release
+
+          DEB="$(find output -type f -name '*tasker-permissions*.deb' -print -quit)"
+
+          if [ -z "$DEB" ]; then
+            echo "Error: no .deb package was produced."
+            exit 1
+          fi
+
+          echo "Built package: $DEB"
+
+          cp "$DEB" release/tasker-permissions.deb
+
+          echo "=== Release files ==="
+          ls -lh release/tasker-permissions.deb
+
+      - name: Create/update tasker-permissions release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tasker-permissions
+          name: Tasker Permissions
+          body: |
+            # Tasker Permissions for Termux
+
+            Utility to easily grant Tasker permissions.
+
+            ## Installation
+
+            ```sh
+            curl -LO https://github.com/${{ github.repository }}/releases/download/tasker-permissions/tasker-permissions.deb && \
+            apt install ./tasker-permissions.deb
+            ```
+
+            Install Termux:X11 apk for GUI :-
+
+            https://github.com/termux/termux-x11/releases/download/nightly/termux-x11-universal-sharedUid-debug.apk
+
+            Then launch `tasker-permissions` with Termux:X11 :-
+
+            ```sh
+            tasker-permissionsX
+            ```
+
+            ## Package
+
+            - `tasker-permissions.deb`
+            - Version: 0.2.0
+          files: |
+            termux-packages/release/tasker-permissions.deb
+          draft: false
+          prerelease: false
+          make_latest: false
