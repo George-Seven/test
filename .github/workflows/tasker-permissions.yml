@@ -24,8 +24,9 @@ jobs:
           TERMUX_PKG_LICENSE="Apache-2.0"
           TERMUX_PKG_MAINTAINER="@George-Seven"
           TERMUX_PKG_VERSION=0.2.0
-          TERMUX_PKG_SRCURL=https://github.com/joaomgcd/Tasker-Permissions/archive/refs/heads/master.tar.gz
+          TERMUX_PKG_SRCURL=https://github.com/joaomgcd/Tasker-Permissions/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
           TERMUX_PKG_BUILD_DEPENDS="nodejs, npm"
+          TERMUX_PKG_DEPENDS="adb"
           TERMUX_PKG_BUILD_IN_SRC=true
           TERMUX_PKG_PLATFORM_INDEPENDENT=true
 
@@ -55,6 +56,12 @@ jobs:
 
               rm -rf "$tasker_permissions_dir/node_modules/electron"
               rm -rf "$tasker_permissions_dir/.npm"
+
+              mkdir -p "$tasker_permissions_dir/bin/linux"
+
+              rm -f "$tasker_permissions_dir/bin/linux/adb"
+              ln -s "$TERMUX_PREFIX/bin/adb" \
+                  "$tasker_permissions_dir/bin/linux/adb"
 
               install -Dm755 /dev/stdin "$tasker_permissions_dir/install-electron.sh" <<-'INSTALL_ELECTRON'
           #!/data/data/com.termux/files/usr/bin/bash
