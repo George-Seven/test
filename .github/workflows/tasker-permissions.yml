@@ -26,7 +26,7 @@ jobs:
           TERMUX_PKG_VERSION=0.2.0
           TERMUX_PKG_SRCURL=https://github.com/joaomgcd/Tasker-Permissions/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
           TERMUX_PKG_BUILD_DEPENDS="nodejs, npm"
-          TERMUX_PKG_DEPENDS="adb"
+          TERMUX_PKG_DEPENDS="android-tools"
           TERMUX_PKG_BUILD_IN_SRC=true
           TERMUX_PKG_PLATFORM_INDEPENDENT=true
 
