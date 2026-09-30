@@ -23,7 +23,7 @@ jobs:
           TERMUX_PKG_DESCRIPTION="A novel-writing tool created by a novelist."
           TERMUX_PKG_LICENSE="MIT"
           TERMUX_PKG_MAINTAINER="@George-Seven"
-          TERMUX_PKG_VERSION=0.8.3
+          TERMUX_PKG_VERSION=1.2.2
           TERMUX_PKG_SRCURL=https://github.com/hughhowey/neo/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
           TERMUX_PKG_BUILD_DEPENDS="nodejs, npm"
           TERMUX_PKG_BUILD_IN_SRC=true
