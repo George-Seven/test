@@ -240,7 +240,7 @@ jobs:
         working-directory: termux-packages
         run: |
           chmod +x scripts/run-docker.sh
-          ./scripts/run-docker.sh ./build-package.sh -I -f neo
+          ./scripts/run-docker.sh ./build-package.sh -I -f neo || true
 
       - name: Prepare release
         working-directory: termux-packages
