@@ -56,6 +56,7 @@ jobs:
 
               rm -rf "$neo_dir/node_modules/electron"
               rm -rf "$neo_dir/.npm"
+              rm -rf "$neo_dir/koffi/build/koffi"
 
               install -Dm755 /dev/stdin "$neo_dir/install-electron.sh" <<-'INSTALL_ELECTRON'
           #!/data/data/com.termux/files/usr/bin/bash
@@ -240,7 +241,7 @@ jobs:
         working-directory: termux-packages
         run: |
           chmod +x scripts/run-docker.sh
-          ./scripts/run-docker.sh ./build-package.sh -I -f neo || true
+          ./scripts/run-docker.sh ./build-package.sh -I -f neo
 
       - name: Prepare release
         working-directory: termux-packages
