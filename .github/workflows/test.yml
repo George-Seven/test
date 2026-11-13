@@ -8,6 +8,8 @@ jobs:
     steps:
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v3
       - name: Setup upterm session
         uses: owenthereal/action-upterm@v2
         with:
